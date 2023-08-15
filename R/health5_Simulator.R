@@ -73,43 +73,59 @@ health5_simulate_paths <- function(list_trans_probs, init_age, init_state, cohor
 health5_create_life_table=function(list_trans_probs,init_age,init_state,cohort){
         # list of 46 matrices of transition probabilities for this simulation
         #list of lifetables
-        state_status=matrix(nrow = 110-init_age+2, ncol = 6)
-        colnames(state_status) <- c("Age", "Healthy", "M", "D", "MD", "Dead")
+        state_status=matrix(nrow = 110-init_age+1, ncol = 20)
+        colnames(state_status) <- c("Age", "Alive", "H", "M", "D", "MD", "Dead","H_M","H_D","H_MD","H_Dead","M_MD","M_Dead","D_H","D_M","D_MD","D_Dead","MD_M","MD_Dead","H.M.D.MD_Dead")
         if (init_state==0){
             # initial state status is 1 in the healthy state and 0 for the others
-            state_status[1,]=c(init_age,1,0,0,0,0)
+            state_status[1,]=c(init_age,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
         }
         if (init_state==1){
             # initial state status is 1 in the M state and 0 for the others
-            state_status[1,]=c(init_age,0,1,0,0,0)
+            state_status[1,]=c(init_age,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
         }
         if (init_state==2){
             # initial state status is 1 in the D state and 0 for the others
-            state_status[1,]=c(init_age,0,0,1,0,0)
+            state_status[1,]=c(init_age,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
         }
         if (init_state==3){
             # initial state status is 1 in the MD state and 0 for the others
-            state_status[1,]=c(init_age,0,0,0,1,0)
+            state_status[1,]=c(init_age,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
         }
 
-        for (age in init_age:110){
-
-            for (j in 2:6){
-                state_status[age-init_age+2,j]=state_status[age-init_age+1,2]*list_trans_probs[[age-init_age+1]][1,j-1]+
-                    state_status[age-init_age+1,3]*list_trans_probs[[age-init_age+1]][2,j-1]+
-                    state_status[age-init_age+1,4]*list_trans_probs[[age-init_age+1]][3,j-1]+
-                    state_status[age-init_age+1,5]*list_trans_probs[[age-init_age+1]][4,j-1]+
-                    state_status[age-init_age+1,6]*list_trans_probs[[age-init_age+1]][5,j-1]
+        for (age in init_age:(110-1)){
+            for (j in 3:7){
+                state_status[age-init_age+2,j]=state_status[age-init_age+1,3]*list_trans_probs[[age-init_age+1]][1,j-2]+
+                    state_status[age-init_age+1,4]*list_trans_probs[[age-init_age+1]][2,j-2]+
+                    state_status[age-init_age+1,5]*list_trans_probs[[age-init_age+1]][3,j-2]+
+                    state_status[age-init_age+1,6]*list_trans_probs[[age-init_age+1]][4,j-2]+
+                    state_status[age-init_age+1,7]*list_trans_probs[[age-init_age+1]][5,j-2]
                 # state_status is essentially the life table at each age
                 # firstly times the probability/or number(if assume 10000 individuals just simply times 10000)
                 # of the state at the beginning of this year with the probability of entering state j from this state
                 # then take the sum of all possible initial states of this year
             }
-            state_status[age-init_age+2,1]=age+1
+            state_status[age-init_age+2,'Alive']=1-state_status[age-init_age+2,'Dead']
+            state_status[age-init_age+2,'Age']=age+1
+
+            state_status[age-init_age+2,'H_M']=state_status[age-init_age+1,'H']*list_trans_probs[[age-init_age+1]][1,2]
+            state_status[age-init_age+2,"H_D"]=state_status[age-init_age+1,'H']*list_trans_probs[[age-init_age+1]][1,3]
+            state_status[age-init_age+2,"H_MD"]=state_status[age-init_age+1,'H']*list_trans_probs[[age-init_age+1]][1,4]
+            state_status[age-init_age+2,"H_Dead"]=state_status[age-init_age+1,'H']*list_trans_probs[[age-init_age+1]][1,5]
+            state_status[age-init_age+2,"M_MD"]=state_status[age-init_age+1,'M']*list_trans_probs[[age-init_age+1]][2,4]
+            state_status[age-init_age+2,"M_Dead"]=state_status[age-init_age+1,'M']*list_trans_probs[[age-init_age+1]][2,5]
+            state_status[age-init_age+2,"D_H"]=state_status[age-init_age+1,'D']*list_trans_probs[[age-init_age+1]][3,1]
+            state_status[age-init_age+2,"D_M"]=state_status[age-init_age+1,'D']*list_trans_probs[[age-init_age+1]][3,2]
+            state_status[age-init_age+2,"D_MD"]=state_status[age-init_age+1,'D']*list_trans_probs[[age-init_age+1]][3,4]
+            state_status[age-init_age+2,"D_Dead"]=state_status[age-init_age+1,'D']*list_trans_probs[[age-init_age+1]][3,5]
+            state_status[age-init_age+2,"MD_M"]=state_status[age-init_age+1,'MD']*list_trans_probs[[age-init_age+1]][4,2]
+            state_status[age-init_age+2,"MD_Dead"]=state_status[age-init_age+1,'MD']*list_trans_probs[[age-init_age+1]][4,5]
+            state_status[age-init_age+2,"H.M.D.MD_Dead"]=state_status[age-init_age+2,"H_Dead"]+state_status[age-init_age+2,"M_Dead"]+state_status[age-init_age+2,"D_Dead"]+state_status[age-init_age+2,"MD_Dead"]
+
             expected_time_state=colSums(state_status) # the order is H M D MD Dead
         }
         # the size of the lists will be large
-        state_status[,c(2:6)]=state_status[,c(2:6)]*cohort
+        state_status[,c(2:20)]=state_status[,c(2:20)]*cohort
+        state_status=data.frame(state_status)
     return(state_status)
 }
 

@@ -137,3 +137,130 @@ health5_stats_produce=function(input){
     output[2]=stats::sd(input, na.rm = TRUE)
     return(output)
 }
+
+#' Survival Statistics
+#'
+#' Produces statistics for 5-state model.
+#'
+#' @param init_age
+#' integer between 65 and 110 denoting initial age of individual
+#' @param init_state
+#' 0 for H state, 1 for M state, 2 for D state, 3 for MD state
+#' @param trans_probs
+#' list of transition probability matrices, generated from \code{health5_get_trans_probs}.
+#' @param simulated_path
+#' matrix containing lifetime path simulations from \code{health5_simulate_paths} function.
+#'
+#' @return
+#' dataframe output containing mean and standard deviation of different statistics
+#'
+#' @export
+#'
+#' @examples example
+health5_stats <- function (init_age, init_state, trans_probs) {
+
+    simulated_path=health5_simulate_paths(trans_probs, init_age, init_state, cohort=50000)
+
+if (init_state == 0) {
+    total_life=health5_total_time_stats(simulated_path, 4)
+    years_H=health5_total_time_stats(simulated_path, 0)
+    years_M=health5_total_time_stats(simulated_path, 1)
+    years_D=health5_total_time_stats(simulated_path, 2)
+    years_MD=health5_total_time_stats(simulated_path, 3)
+    years_disability=years_D+years_MD
+    years_illness=years_M+years_MD
+    first_H=health5_first_time_stats(simulated_path, 0)
+    first_M=health5_first_time_stats(simulated_path, 1)
+    first_D=health5_first_time_stats(simulated_path, 2)
+    first_MD=health5_first_time_stats(simulated_path, 3)
+
+    means <- c(mean(total_life), mean(years_H), mean(years_M),
+               mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_H, na.rm = TRUE),mean(first_M, na.rm = TRUE),mean(first_D, na.rm = TRUE),mean(first_MD, na.rm = TRUE))
+    sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M),
+             stats::sd(years_D),stats::sd(years_MD),stats::sd(years_disability),stats::sd(years_illness),
+             stats::sd(first_H, na.rm = TRUE),stats::sd(first_M, na.rm = TRUE),stats::sd(first_D, na.rm = TRUE),stats::sd(first_MD, na.rm = TRUE))
+    stats_df <- data.frame(
+        'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD',
+                    'Mean years with disability','Mean years with illness','First time leaving state H','First time entering state M',
+                    'First time entering state D', 'First time entering state MD'),
+        'mean' = means,
+        's.dev' = sds
+    )
+    return(stats_df)
+}
+##
+if (init_state == 1) {
+    total_life=health5_total_time_stats(simulated_path, 4)
+    years_H=health5_total_time_stats(simulated_path, 0)
+    years_M=health5_total_time_stats(simulated_path, 1)
+    years_D=health5_total_time_stats(simulated_path, 2)
+    years_MD=health5_total_time_stats(simulated_path, 3)
+    years_disability=years_D+years_MD
+    years_illness=years_M+years_MD
+    first_MD=health5_first_time_stats(simulated_path, 3)
+
+    means <- c(mean(total_life), mean(years_H), mean(years_M),
+               mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_MD, na.rm = TRUE))
+    sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M),
+             stats::sd(years_D),stats::sd(years_MD),stats::sd(years_disability),stats::sd(years_illness),
+             stats::sd(first_MD, na.rm = TRUE))
+    stats_df <- data.frame(
+        'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD',
+                    'Mean years with disability','Mean years with illness','First time entering state MD'),
+        'mean' = means,
+        's.dev' = sds
+    )
+    return(stats_df)
+}
+##
+if (init_state == 2) {
+    total_life=health5_total_time_stats(simulated_path, 4)
+    years_H=health5_total_time_stats(simulated_path, 0)
+    years_M=health5_total_time_stats(simulated_path, 1)
+    years_D=health5_total_time_stats(simulated_path, 2)
+    years_MD=health5_total_time_stats(simulated_path, 3)
+    years_disability=years_D+years_MD
+    years_illness=years_M+years_MD
+    first_M=health5_first_time_stats(simulated_path, 1)
+    first_MD=health5_first_time_stats(simulated_path, 3)
+
+    means <- c(mean(total_life), mean(years_H), mean(years_M),
+               mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_M, na.rm = TRUE),mean(first_MD, na.rm = TRUE))
+    sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M),
+             stats::sd(years_D),stats::sd(years_MD),stats::sd(years_disability),stats::sd(years_illness),
+             stats::sd(first_M, na.rm = TRUE),stats::sd(first_MD, na.rm = TRUE))
+    stats_df <- data.frame(
+        'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD',
+                    'Mean years with disability','Mean years with illness','First time entering state M',
+                    'First time entering state MD'),
+        'mean' = means,
+        's.dev' = sds
+    )
+    return(stats_df)
+}
+##
+if (init_state == 3) {
+    total_life=health5_total_time_stats(simulated_path, 4)
+    years_H=health5_total_time_stats(simulated_path, 0)
+    years_M=health5_total_time_stats(simulated_path, 1)
+    years_D=health5_total_time_stats(simulated_path, 2)
+    years_MD=health5_total_time_stats(simulated_path, 3)
+    years_disability=years_D+years_MD
+    years_illness=years_M+years_MD
+    first_M=health5_first_time_stats(simulated_path, 1)
+
+    means <- c(mean(total_life), mean(years_H), mean(years_M),
+               mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_M, na.rm = TRUE))
+    sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M),
+             stats::sd(years_D),stats::sd(years_MD),stats::sd(years_disability),stats::sd(years_illness),
+             stats::sd(first_M, na.rm = TRUE))
+    stats_df <- data.frame(
+        'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD',
+                    'Mean years with disability','Mean years with illness','First time entering state M'),
+        'mean' = means,
+        's.dev' = sds
+    )
+    return(stats_df)
+}
+}
+

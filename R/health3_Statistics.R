@@ -685,7 +685,7 @@ health3_survival_stats <- function(init_age, init_state, trans_probs = NULL, sim
     sds <- c(stats::sd(total_lifetime), stats::sd(healthy_lifetime), stats::sd(disabled_lifetime),
             stats::sd(first_disabled, na.rm = TRUE))
     stats_df <- data.frame(
-      'stats' = c('total_life', 'healthy_life', 'disabled_life', 'onset_disability'),
+      'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state F', 'First time entering state F'),
       'mean' = means,
       's.dev' = sds
     )
@@ -694,7 +694,7 @@ health3_survival_stats <- function(init_age, init_state, trans_probs = NULL, sim
     means <- c(mean(total_lifetime), mean(healthy_lifetime), mean(disabled_lifetime))
     sds <- c(stats::sd(total_lifetime), stats::sd(healthy_lifetime), stats::sd(disabled_lifetime))
     stats_df <- data.frame(
-      'stats' = c('total_life', 'healthy_life', 'disabled_life'),
+      'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state F'),
       'mean' = means,
       's.dev' = sds
     )
@@ -786,7 +786,7 @@ health3_survival_statsF <- function(init_age, init_state, female, year, param_fi
     sds <- c(stats::sd(total_lifetime), stats::sd(healthy_lifetime), stats::sd(disabled_lifetime),
              stats::sd(first_disabled, na.rm = TRUE))
     stats_df <- data.frame(
-      'stats' = c('total_life', 'healthy_life', 'disabled_life', 'onset_disability'),
+      'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state F', 'First time entering state F'),
       'mean' = means,
       's.dev' = sds
     )
@@ -795,7 +795,7 @@ health3_survival_statsF <- function(init_age, init_state, female, year, param_fi
     means <- c(mean(total_lifetime), mean(healthy_lifetime), mean(disabled_lifetime))
     sds <- c(stats::sd(total_lifetime), stats::sd(healthy_lifetime), stats::sd(disabled_lifetime))
     stats_df <- data.frame(
-      'stats' = c('total_life', 'healthy_life', 'disabled_life'),
+      'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state F'),
       'mean' = means,
       's.dev' = sds
     )

@@ -13,7 +13,8 @@ health3_create_life_table(trans_probs, init_age, init_state, cohort)
 
 \item{init_state}{integer value of 0 or 1, where 0 indicates healthy and 1 indicates disabled}
 
-\item{cohort}{initial cohort size for lifetable}
+\item{cohort}{initial cohort size for lifetable
+lx:H, dx:HF_D, fx:H_F, rx:F_H, Lx:Alive, Fx:F, Dx1:H_D, Dx2:F_D}
 }
 \value{
 dataframe of lifetable generated

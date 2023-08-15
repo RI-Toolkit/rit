@@ -13,7 +13,7 @@
 #' integer value of 0 or 1, where 0 indicates healthy and 1 indicates disabled
 #' @param cohort
 #' initial cohort size for lifetable
-#'
+#' lx:H, dx:HF_D, fx:H_F, rx:F_H, Lx:Alive, Fx:F, Dx1:H_D, Dx2:F_D
 #' @return
 #' dataframe of lifetable generated
 #'
@@ -49,37 +49,42 @@ health3_create_life_table <- function(trans_probs, init_age, init_state, cohort)
 
     # create first row
     if (init_state == 0) {
-      life_table <- data.frame('age' = init_age,
-                               'lx' = cohort,
-                               'dx' = cohort*trans_probs[[1]][1, 3],
-                               'fx' = cohort*trans_probs[[1]][1, 2],
-                               'rx' = 0,
-                               'Lx' = cohort,
-                               'Fx' = 0,
-                               'Dx1' = cohort*trans_probs[[1]][1, 3],
-                               'Dx2' = 0)
+      life_table <- data.frame('Age' = init_age,
+                               'Alive' = cohort,
+                               'H' = cohort,
+                               'F' = 0,
+                               'Dead' = 0,
+                               'H_F' = cohort*trans_probs[[1]][1, 2],
+                               'H_Dead' = cohort*trans_probs[[1]][1, 3],
+                               'F_H' = 0,
+                               'F_Dead' = 0,
+                               'H.F_Dead' = cohort*trans_probs[[1]][1, 3]
+                               )
     } else {
-      life_table <- data.frame('age' = init_age,
-                               'lx' = 0,
-                               'dx' = cohort*trans_probs[[1]][2, 3],
-                               'fx' = 0,
-                               'rx' = cohort*trans_probs[[1]][2, 1],
-                               'Lx' = cohort,
-                               'Fx' = cohort,
-                               'Dx1' = 0,
-                               'Dx2' = cohort*trans_probs[[1]][2, 3])
+      life_table <- data.frame('Age' = init_age,
+                               'Alive' = cohort,
+                               'H' = 0,
+                               'F' = cohort,
+                               'Dead' = 0,
+                               'H_F' = 0,
+                               'H_Dead' = 0,
+                               'F_H' = cohort*trans_probs[[1]][2, 1],
+                               'F_Dead' = cohort*trans_probs[[1]][2, 3],
+                               'H.F_Dead' = cohort*trans_probs[[1]][2, 3]
+                               )
     }
     for (i in 2:(110-init_age+1)) {
-      # we need to account for all transitions at each age using the transition probailities
-      life_table[i, 'age'] <- init_age + i - 1
-      life_table[i, 'lx'] <- life_table[i-1, 'lx'] - life_table[i-1, 'Dx1'] - life_table[i-1, 'fx'] + life_table[i-1, 'rx']
-      life_table[i, 'Fx'] <- life_table[i-1, 'Fx'] + life_table[i-1, 'fx'] - life_table[i-1, 'rx'] - life_table[i-1, 'Dx2']
-      life_table[i, 'Lx'] <- life_table[i, 'lx'] + life_table[i, 'Fx']
-      life_table[i, 'fx'] <- life_table[i, 'lx']*trans_probs[[i]][1, 2]
-      life_table[i, 'rx'] <- life_table[i, 'Fx']*trans_probs[[i]][2, 1]
-      life_table[i, 'Dx1'] <- life_table[i, 'lx']*trans_probs[[i]][1, 3]
-      life_table[i, 'Dx2'] <- life_table[i, 'Fx']*trans_probs[[i]][2, 3]
-      life_table[i, 'dx'] <- life_table[i, 'Dx1'] + life_table[i, 'Dx2']
+      # we need to account for all transitions at each age using the transition probabilities
+      life_table[i, 'Age'] <- init_age + i - 1
+      life_table[i, 'H'] <- life_table[i-1, 'H'] - life_table[i-1, 'H_Dead'] - life_table[i-1, 'H_F'] + life_table[i-1, 'F_H']
+      life_table[i, 'F'] <- life_table[i-1, 'F'] + life_table[i-1, 'H_F'] - life_table[i-1, 'F_H'] - life_table[i-1, 'F_Dead']
+      life_table[i, 'Alive'] <- life_table[i, 'H'] + life_table[i, 'F']
+      life_table[i, 'H_F'] <- life_table[i, 'H']*trans_probs[[i]][1, 2]
+      life_table[i, 'H_Dead'] <- life_table[i, 'H']*trans_probs[[i]][1, 3]
+      life_table[i, 'F_H'] <- life_table[i, 'F']*trans_probs[[i]][2, 1]
+      life_table[i, 'F_Dead'] <- life_table[i, 'F']*trans_probs[[i]][2, 3]
+      life_table$'H.F_Dead'[i] <- life_table[i, 'H_Dead'] + life_table[i, 'F_Dead']
+      life_table[i, 'Dead'] <- life_table[i-1, 'Dead'] + life_table$'H.F_Dead'[i-1]
     }
 
     return(life_table)

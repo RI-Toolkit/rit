@@ -25,8 +25,8 @@
 #'
 #' @export
 #' @import expm
-#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F', 
-#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8, 
+#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F',
+#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
 #'
 get_trans_probs <- function(n_states, model_type, param_file, init_age, female, year = 2012, wave_index = 8, latent = 0) {
@@ -73,8 +73,8 @@ get_trans_probs <- function(n_states, model_type, param_file, init_age, female, 
 #'
 #' @export
 #'
-#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F', 
-#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8, 
+#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F',
+#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
 #' lifetable <- create_life_table(trans_probs, init_age=65, init_state = 0, cohort = 100000)
 #'
@@ -129,8 +129,8 @@ create_life_table <- function(trans_probs, init_age, init_state = 0, cohort = 10
 #'
 #' @export
 #'
-#' @examples lifetable_simulated <- simulate_life_table(n_states=5, model_type='F', 
-#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, init_state = 0, 
+#' @examples lifetable_simulated <- simulate_life_table(n_states=5, model_type='F',
+#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, init_state = 0,
 #' wave_index = 8,latent=0,n_sim=100,cohort=100,mean=FALSE)
 #'
 simulate_life_table <- function(n_states, model_type, param_file, init_age, female, year = 2012, init_state = 0, wave_index = 8,latent=0,n_sim=100,cohort=100000,mean=FALSE) {
@@ -172,10 +172,10 @@ simulate_life_table <- function(n_states, model_type, param_file, init_age, fema
 #'
 #' @export
 #'
-#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F', 
-#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8, 
+#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F',
+#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
-#' simulated_path <- simulate_health_state_paths(trans_probs, init_age=65, 
+#' simulated_path <- simulate_health_state_paths(trans_probs, init_age=65,
 #' init_state = 0, cohort = 10000)
 simulate_health_state_paths <- function(trans_probs, init_age, init_state = 0, cohort = 10000) {
 
@@ -211,20 +211,54 @@ simulate_health_state_paths <- function(trans_probs, init_age, init_state = 0, c
 #'
 #' @import tidyr dplyr ggplot2
 #'
-#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F', 
-#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8, 
+#' @examples trans_probs=get_trans_probs(n_states=5, model_type='F',
+#' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
 #' prob_plots(init_state=0, init_age=65, trans_probs=trans_probs)
 
-prob_plots <- function (init_state, init_age, trans_probs) {
+prob_plots <- function (init_age, init_state, trans_probs) {
 
     if (length(trans_probs[[1]][1,]) == 3) {
-        return(health3_prob_plots(init_state, init_age, trans_probs))
+        return(health3_prob_plots(init_age, init_state, trans_probs))
     }
 
     if (length(trans_probs[[1]][1,]) == 5) {
-        return(health5_prob_plots(init_state, init_age, trans_probs))
+        return(health5_prob_plots(init_age, init_state, trans_probs))
     }
 
     stop('invalid dimensions: trans_probs')
+}
+
+#' Survival Statistics
+#'
+#' Produces statistics for 5-state model.
+#'
+#' @param n_states
+#' take values 3 or 5, use 3 for 3-state model, and 5 for 5-state model
+#' @param init_age
+#' integer between 65 and 110 denoting initial age of individual
+#' @param init_state
+#' 0 for H state, 1 for M state, 2 for D state, 3 for MD state
+#' @param trans_probs
+#' list of transition probability matrices, generated from \code{health5_get_trans_probs}.
+#' @param simulated_path
+#' matrix containing lifetime path simulations from \code{health5_simulate_paths} function.
+#'
+#' @return
+#' dataframe output containing mean and standard deviation of different statistics
+#'
+#' @export
+#'
+#' @examples example
+health_stats <- function (n_states, init_age, init_state, trans_probs){
+    if (n_states == 3) {
+        return(health3_survival_stats(init_age, init_state, trans_probs))
+    }
+
+    if (n_states == 5) {
+        return(health5_stats(init_age, init_state, trans_probs))
+    }
+
+    stop('invalid n_states')
+
 }

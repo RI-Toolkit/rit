@@ -19,7 +19,7 @@
 #' @import tidyr dplyr ggplot2
 #'
 #' @examples example
-health5_prob_plots <- function(init_state, init_age, trans_probs) {
+health5_prob_plots <- function(init_age, init_state, trans_probs) {
     age <- H <- M <- D <- MD <- Dead <- value <- Type <- NULL
   # flagging errors
   if (init_age < 65 | init_age > 110) {
@@ -37,24 +37,25 @@ health5_prob_plots <- function(init_state, init_age, trans_probs) {
 lifetable=create_life_table(trans_probs, init_age, init_state, cohort = 1)
 
   # create age axis
-  ages <- init_age:111
+  ages <- init_age:110
 
   # create dataframe for ggplot
   survival_df <- data.frame('age' = ages,
-                              'H' = lifetable[,2],
-                              'M' = lifetable[,3],
-                              'D' = lifetable[,4],
-                              'MD'= lifetable[,5],
-                              'Dead'= lifetable[,6])
+                            'Alive'=lifetable[,'Alive'],
+                            'H' = lifetable[,'H'],
+                            'M' = lifetable[,'M'],
+                            'D' = lifetable[,'D'],
+                            'MD'= lifetable[,'MD']
+                              )
 
   updated_df <- survival_df %>%
-    dplyr::select(age, H, M, D, MD, Dead) %>%
+    dplyr::select(age, Alive, H, M, D, MD) %>%
     tidyr::gather(key = 'Type', value = 'value', -age)
 
   surv_plot <- ggplot2::ggplot(updated_df, aes(x = age, y = value)) +
       ggplot2::geom_line(aes(color = Type)) +
-      ggplot2::scale_color_manual(labels = c('D', 'Dead', 'H', 'M', 'MD'),
-                       values = c('darkolivegreen2', 'Red', 'skyblue1','blue','yellow')) +
+      ggplot2::scale_color_manual(labels = c('Alive', 'D', 'H', 'M', 'MD'),
+                       values = c('darkolivegreen2', 'lightcoral', 'skyblue1','blue','yellow')) +
       ggplot2::ggtitle('Probability of Surviving to each Different State')
   return(surv_plot)
 }
