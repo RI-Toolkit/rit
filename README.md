@@ -9,7 +9,7 @@ Toolkit of R modules for researchers to use in modelling retirement and age care
 ```
 install.packages("devtools")
 library(devtools)
-devtools::install_github("https://github.com/print-hi/rit")
+devtools::install_github("https://github.com/RI-Toolkit/rit")
 ```
 
 ## Documentation
