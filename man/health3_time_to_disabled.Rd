@@ -7,6 +7,7 @@
 health3_time_to_disabled(
   model_type,
   init_age,
+  init_state,
   trans_probs = NULL,
   simulated_path = NULL,
   female = NULL,
@@ -19,6 +20,8 @@ health3_time_to_disabled(
 \item{model_type}{S for static model, T for trend model, F for frailty model}
 
 \item{init_age}{integer between 65 and 110 denoting initial age of individual}
+
+\item{init_state}{0 for healthy, 1 for disabled}
 
 \item{trans_probs}{a list of transition probability matrices, preferably generated from
 \code{health3_get_trans_probs}, only needed for static and trend models.}

@@ -354,6 +354,9 @@ if (model_type=='F'){
 #' @param init_age
 #' integer between 65 and 110 denoting initial age of individual
 #'
+#' @param init_state
+#' 0 for healthy, 1 for disabled
+#'
 #' @param trans_probs
 #' a list of transition probability matrices, preferably generated from
 #' \code{health3_get_trans_probs}, only needed for static and trend models.
@@ -380,21 +383,25 @@ if (model_type=='F'){
 #' @export
 #'
 #' @examples example
-health3_time_to_disabled <- function(model_type, init_age, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_time_to_disabled <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
   if (init_age<65 | init_age>110) {
     stop('invalid age')
+  }
+
+  if (init_state != 0) {
+    stop('initial state needs to be 0')
   }
 
   if (as.integer(init_age) != init_age) {
     stop('initial age must be an integer')
   }
 
+if (model_type=='S' | model_type=='T'){
+
   if (is.null(trans_probs) & is.null(simulated_path)) {
     stop('no transition probability matrices or simulated paths were provided')
   }
-
-if (model_type=='S' | model_type=='T'){
 
   # simulate path or just use path given
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
