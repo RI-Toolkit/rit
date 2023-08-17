@@ -134,7 +134,9 @@ create_life_table <- function(trans_probs, init_age, init_state = 0, cohort = 10
 #' wave_index = 8,latent=0,n_sim=100,cohort=100,mean=FALSE)
 #'
 simulate_life_table <- function(n_states, model_type, param_file, init_age, female, year = 2012, init_state = 0, wave_index = 8,latent=0,n_sim=100,cohort=100000,mean=FALSE) {
-
+  if (model_type != 'F') {
+    stop('use frailty model to simulate lifetables')
+  }
   if (n_states == 3) {
     return(health3_simulate_life_table(init_age, female, year, param_file, init_state, n_sim, cohort, mean))
   }
@@ -233,16 +235,50 @@ prob_plots <- function (init_age, init_state, trans_probs) {
 #'
 #' Produces statistics for 5-state model.
 #'
+#' @param model_type
+#' S for static model, T for trend model, F for frailty model
+#'
 #' @param n_states
 #' take values 3 or 5, use 3 for 3-state model, and 5 for 5-state model
+#'
+#' @param state
+#' 0 for first time leaving H state, only useful when initial state is 0
+#' 1 for first time entering M state
+#' 2 for first time entering D state
+#' 3 for first time entering MD state
+#' -1 for first time entering the dead state
+#'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual
+#' integer between 65 and 110 denoting initial age of individual. This needs to be same
+#' initial age used in generation of `trans_probs` or `simulated_path`
+#'
 #' @param init_state
-#' 0 for H state, 1 for M state, 2 for D state, 3 for MD state
+#' 0 for healthy, 1 for disabled
+#'
 #' @param trans_probs
-#' list of transition probability matrices, generated from \code{health5_get_trans_probs}.
+#' a list of transition probability matrices, preferably generated from
+#' \code{get_trans_probs}, only needed for static and trend models.
+#'
 #' @param simulated_path
-#' matrix containing lifetime path simulations from \code{health5_simulate_paths} function.
+#' the simulated path of individuals from the function \code{simulate_health_state_paths}
+#'
+#' @param female
+#' 0 for male, 1 for female, compulsory variable for frailty model
+#'
+#' @param year
+#' integer indicating current year, compulsory variable for frailty model
+#'
+#' @param wave_index
+#' the wave index = (interview year - 1998)/2 + 1, compulsory variable for frailty model
+#'
+#' @param latent
+#' initial value of latent factor, normally take the value 0, compulsory variable for frailty model
+#'
+#' @param param_file
+#' string for file path of parameter file OR a tibble/dataframe of parameters, compulsory variable for frailty model
+#'
+#' @param n
+#' integer denoting number of unique latent factor simulations
 #'
 #' @return
 #' dataframe output containing mean and standard deviation of different statistics
@@ -250,15 +286,12 @@ prob_plots <- function (init_age, init_state, trans_probs) {
 #' @export
 #'
 #' @examples example
-health_stats <- function (n_states, init_age, init_state, trans_probs){
+health_stats <- function (model_type, n_states, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
     if (n_states == 3) {
-        return(health3_survival_stats(init_age, init_state, trans_probs))
+        return(health3_survival_stats(model_type, init_age, init_state, trans_probs, simulated_path, female, year, param_file, n))
     }
-
     if (n_states == 5) {
-        return(health5_stats(init_age, init_state, trans_probs))
+        return(health5_stats(model_type, init_age, init_state, trans_probs, simulated_path, female, year, wave_index, latent, param_file, n))
     }
-
     stop('invalid n_states')
-
 }

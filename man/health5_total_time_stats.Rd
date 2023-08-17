@@ -4,17 +4,51 @@
 \alias{health5_total_time_stats}
 \title{function to get the total time in different states for a number of individuals}
 \usage{
-health5_total_time_stats(simulated_path, state)
+health5_total_time_stats(
+  model_type,
+  state,
+  init_age,
+  init_state,
+  trans_probs = NULL,
+  simulated_path = NULL,
+  female = NULL,
+  year = NULL,
+  wave_index = NULL,
+  latent = NULL,
+  param_file = NULL,
+  n = 1000
+)
 }
 \arguments{
+\item{model_type}{S for static model, T for trend model, F for frailty model}
+
+\item{state}{0 for first time leaving H state, only useful when initial state is 0
+1 for first time entering M state
+2 for first time entering D state
+3 for first time entering MD state
+-1 for first time entering the dead state}
+
+\item{init_age}{integer between 65 and 110 denoting initial age of individual. This needs to be same
+initial age used in generation of \code{trans_probs} or \code{simulated_path}}
+
+\item{init_state}{0 for healthy, 1 for disabled}
+
+\item{trans_probs}{a list of transition probability matrices, preferably generated from
+\code{get_trans_probs}, only needed for static and trend models.}
+
 \item{simulated_path}{the simulated path of individuals from the function \code{simulate_health_state_paths}}
 
-\item{state}{0 for total time in H state
-1 for total time in M state
-2 for total time in D state
-3 for total time in MD state
--1 for total time in dead state
-4 for total time alive or not in dead state}
+\item{female}{0 for male, 1 for female, compulsory variable for frailty model}
+
+\item{year}{integer indicating current year, compulsory variable for frailty model}
+
+\item{wave_index}{the wave index = (interview year - 1998)/2 + 1, compulsory variable for frailty model}
+
+\item{latent}{initial value of latent factor, normally take the value 0, compulsory variable for frailty model}
+
+\item{param_file}{string for file path of parameter file OR a tibble/dataframe of parameters, compulsory variable for frailty model}
+
+\item{n}{integer denoting number of unique latent factor simulations}
 }
 \value{
 a column that consists the total time in different states for a number of individuals
