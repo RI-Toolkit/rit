@@ -46,7 +46,7 @@
 health3_afl <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
-  if (model_type != 'S' & init_state != 'T' & init_state != 'F') {
+  if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
     stop('invalid model type, use S for static, T for trend, and F for frailty model')
   }
 
@@ -152,7 +152,7 @@ if (model_type=='S' | model_type=='T'){
 health3_hfl <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
-    if (model_type != 'S' & init_state != 'T' & init_state != 'F') {
+    if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
         stop('invalid model type, use S for static, T for trend, and F for frailty model')
     }
 
@@ -268,7 +268,7 @@ if (model_type=='F'){
 health3_dfl <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
-    if (model_type != 'S' & init_state != 'T' & init_state != 'F') {
+    if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
         stop('invalid model type, use S for static, T for trend, and F for frailty model')
     }
 
