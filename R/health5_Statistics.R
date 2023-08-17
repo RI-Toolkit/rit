@@ -137,11 +137,12 @@ return(first_time)
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param state
-#' 0 for first time leaving H state, only useful when initial state is 0
-#' 1 for first time entering M state
-#' 2 for first time entering D state
-#' 3 for first time entering MD state
-#' -1 for first time entering the dead state
+#' 0 for total time in H state
+#' 1 for total time in M state
+#' 2 for total time in D state
+#' 3 for total time in MD state
+#' -1 for total time in dead state
+#' 4 for total time alive or not in dead state
 #'
 #' @param init_age
 #' integer between 65 and 110 denoting initial age of individual. This needs to be same
