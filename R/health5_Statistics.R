@@ -44,7 +44,8 @@
 #'
 #' @return
 #' a column that consists the first time leaving or entering the state for a number of individuals
-#' @export health5_first_time_stats
+#'
+#' @export
 #'
 #' @examples first_time_leave_H=health5_first_time_stats(health5_simulated_path_example, 0)
 health5_first_time_stats=function(model_type, state, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
@@ -178,7 +179,8 @@ return(first_time)
 #'
 #' @return
 #' a column that consists the total time in different states for a number of individuals
-#' @export health5_total_time_stats
+#'
+#' @export
 #'
 #' @examples total_time_alive=health5_total_time_stats(health5_simulated_path_example, 4)
 health5_total_time_stats=function(model_type, state, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
@@ -325,7 +327,6 @@ if (model_type=='S' | model_type=='T'){
 #' the list of values to be studied
 #' @return
 #' mean and variance of the list of values
-#' @export health5_stats_produce
 #'
 #' @examples stats=health5_stats_produce(health5_first_time_stats(health5_simulated_path_example, 0))
 health5_stats_produce=function(input){
@@ -385,7 +386,6 @@ health5_stats_produce=function(input){
 #' @return
 #' dataframe output containing mean and standard deviation of different statistics
 #'
-#' @export
 #'
 #' @examples example
 health5_stats <- function (model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000) {

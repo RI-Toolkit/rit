@@ -15,7 +15,6 @@
 #' initial value of latent factor, normally take the value 0
 #' @return
 #' 12 times 1 vector of transition rates for the 12 types of transitions
-#' @export
 #'
 #' @examples example
 health5_get_trans_rates=function(model_type,param_file,age,female,wave_index,latent){
@@ -75,7 +74,6 @@ health5_get_trans_rates=function(model_type,param_file,age,female,wave_index,lat
 #' @return
 #' 5 times 5 matrix of transitions probabilities, the states are H M D MD Dead
 #' on the rows and columns
-#' @export
 #' @import expm
 #'
 #' @examples example
@@ -118,7 +116,6 @@ health5_get_trans_probs_at_age=function(model_type,param_file,age,female,wave_in
 #' @return a list of 5 times 5 transition probability matrices, from the
 #' initial age to age 110
 #' @import readxl expm
-#' @export
 #'
 #' @examples example
 health5_get_trans_probs=function(model_type, param_file, init_age, female, wave_index, latent){

@@ -14,7 +14,6 @@
 #' line plot with 5 lines, each denoting probabilities of being in the
 #' states H, M, D, MD, Dead respectively.
 #'
-#' @export
 #'
 #' @import tidyr dplyr ggplot2
 #'

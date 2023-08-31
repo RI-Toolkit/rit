@@ -12,7 +12,6 @@
 #' @return
 #' rows of individual paths in the states, 0 for H, 1 for M, 2 for D, 3 for MD, -1 for Dead
 #' for each row it starts from the initial age as an input, and end at age 110
-#' @export
 #'
 #' @examples example
 health5_simulate_paths <- function(list_trans_probs, init_age, init_state, cohort) {
@@ -67,7 +66,6 @@ health5_simulate_paths <- function(list_trans_probs, init_age, init_state, cohor
 #' a life table matrix
 #' the row represents the age from the input initial age to 110, and the columns are states H M D MD Dead
 #'
-#' @export
 #'
 #' @examples example
 health5_create_life_table=function(list_trans_probs,init_age,init_state,cohort){
@@ -157,8 +155,6 @@ health5_create_life_table=function(list_trans_probs,init_age,init_state,cohort){
 #' a list of n_sim number of life table matrices when mean=FALSE
 #' for each matrix, the row represents the age from the input initial age to 110, and the columns are states H M D MD Dead
 #' or the mean life table when mean=TRUE
-#'
-#' @export
 #'
 #' @examples example
 health5_simulate_life_table=function(model_type, param_file, female, wave_index,latent,init_age,init_state,n_sim, cohort, mean){
