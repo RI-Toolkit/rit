@@ -128,11 +128,3 @@
 #' }
 #' @source \url{https://cepar.edu.au/publications/working-papers/functional-disability-systematic-trends-and-uncertainty-comparison-between-china-and-us}
 "china_CLHLS"
-
-#' 10000 simulated paths for males aged 65 in 2012 initially healthy under the 5-state trend model
-#'
-#' A matrix containing 10000 simulated paths for males aged 65 in 2012 initially healthy under the 5-state trend model with parameters estimated with US HRS data
-#' Each row of the matrix represent the path of one individual from age 65 to 110
-#' Used as an inbuilt variable to illustrate the statistics functions for the 5-state health model
-#'
-"health5_simulated_path_example"
