@@ -489,6 +489,7 @@ if (model_type=='F'){
 #' @return
 #' dataframe output containing mean and standard deviation of different statistics
 #'
+#' @noRd
 #'
 #' @examples example
 health3_survival_stats <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {

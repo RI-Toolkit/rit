@@ -328,6 +328,8 @@ if (model_type=='S' | model_type=='T'){
 #' @return
 #' mean and variance of the list of values
 #'
+#' @noRd
+#'
 #' @examples stats=health5_stats_produce(health5_first_time_stats(health5_simulated_path_example, 0))
 health5_stats_produce=function(input){
     output=matrix(nrow=1, ncol = 2)
@@ -386,6 +388,7 @@ health5_stats_produce=function(input){
 #' @return
 #' dataframe output containing mean and standard deviation of different statistics
 #'
+#' @noRd
 #'
 #' @examples example
 health5_stats <- function (model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000) {

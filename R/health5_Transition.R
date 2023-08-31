@@ -16,6 +16,8 @@
 #' @return
 #' 12 times 1 vector of transition rates for the 12 types of transitions
 #'
+#' @noRd
+#'
 #' @examples example
 health5_get_trans_rates=function(model_type,param_file,age,female,wave_index,latent){
     #
@@ -76,6 +78,8 @@ health5_get_trans_rates=function(model_type,param_file,age,female,wave_index,lat
 #' on the rows and columns
 #' @import expm
 #'
+#' @noRd
+#'
 #' @examples example
 health5_get_trans_probs_at_age=function(model_type,param_file,age,female,wave_index,latent){
     trans_rate=health5_get_trans_rates(model_type,param_file,age,female,wave_index,latent)
@@ -116,6 +120,8 @@ health5_get_trans_probs_at_age=function(model_type,param_file,age,female,wave_in
 #' @return a list of 5 times 5 transition probability matrices, from the
 #' initial age to age 110
 #' @import readxl expm
+#'
+#' @noRd
 #'
 #' @examples example
 health5_get_trans_probs=function(model_type, param_file, init_age, female, wave_index, latent){

@@ -17,7 +17,7 @@
 #' @return
 #' dataframe of lifetable generated
 #'
-#' @export create_life_table
+#' @noRd
 #'
 #' @examples example
 #'
@@ -115,6 +115,7 @@ health3_create_life_table <- function(trans_probs, init_age, init_state, cohort)
 #' @return
 #' Dataframe containing life table
 #'
+#' @noRd
 #'
 #' @examples example
 health3_simulate_life_table <- function(init_age, female, year, param_file, init_state, n_sim, cohort, mean) {

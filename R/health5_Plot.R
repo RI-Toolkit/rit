@@ -14,8 +14,9 @@
 #' line plot with 5 lines, each denoting probabilities of being in the
 #' states H, M, D, MD, Dead respectively.
 #'
-#'
 #' @import tidyr dplyr ggplot2
+#'
+#' @noRd
 #'
 #' @examples example
 health5_prob_plots <- function(init_age, init_state, trans_probs) {

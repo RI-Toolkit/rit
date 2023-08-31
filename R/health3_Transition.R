@@ -20,6 +20,9 @@
 #' list of transition probability matrices
 #'
 #' @import expm
+#'
+#' @noRd
+#'
 #' @examples example
 #'
 health3_get_trans_probs <- function(model_type, param_file, init_age, female, year) {
