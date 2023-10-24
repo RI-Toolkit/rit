@@ -6,7 +6,7 @@
 \usage{
 sim_indiv_path(
   init_age,
-  sex = "F",
+  female = 1,
   death_probs = NULL,
   closure_age = 130,
   n_sim = 10000,
@@ -16,7 +16,7 @@ sim_indiv_path(
 \arguments{
 \item{init_age}{the initial age of individuals}
 
-\item{sex}{character string denoting the gender of individuals, "F" for female and "M" for male}
+\item{female}{numeric denoting the gender of individuals, 1 for female and 0 for male}
 
 \item{death_probs}{a vector of 1-year death probabilities. If not supplied, an M7 age-period-cohort
 model will be fitted on \code{mortality_AUS_data} to produce forecasted

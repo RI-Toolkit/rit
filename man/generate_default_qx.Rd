@@ -4,12 +4,12 @@
 \alias{generate_default_qx}
 \title{Generate Default Death Probabilities}
 \usage{
-generate_default_qx(init_age, sex = "F", closure_age = 130)
+generate_default_qx(init_age, female = 1, closure_age = 130)
 }
 \arguments{
 \item{init_age}{the initial age of the path}
 
-\item{sex}{character string denoting the gender of individuals, "F" for female and "M" for male}
+\item{female}{numeric denoting the gender of individuals, 1 for female and 0 for male}
 
 \item{closure_age}{maximum life span}
 }
