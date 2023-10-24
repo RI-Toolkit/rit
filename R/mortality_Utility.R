@@ -241,8 +241,8 @@ cohort2period <- function(cohort_rates) {
 #'
 #' @param init_age
 #' the initial age of the path
-#' @param sex
-#' character string denoting the gender of individuals, "F" for female and "M" for male
+#' @param female
+#' numeric denoting the gender of individuals, 1 for female and 0 for male
 #' @param closure_age
 #' maximum life span
 #'
@@ -251,7 +251,7 @@ cohort2period <- function(cohort_rates) {
 #' initial and closure age
 #'
 #' @keywords internal
-generate_default_qx <- function(init_age, sex = "F", closure_age = 130) {
+generate_default_qx <- function(init_age, female = 1, closure_age = 130) {
 
 # Flagging errors ---------------------------------------------------------
 
@@ -264,9 +264,9 @@ generate_default_qx <- function(init_age, sex = "F", closure_age = 130) {
         stop("initial age must be an integer")
     }
 
-    # sex
-    if (sex != "F" & sex != "M") {
-        stop("sex must be 'F' or 'M'")
+    # female
+    if (female != 1 & female != 0) {
+        stop("female must be 1 or 0")
     }
 
     # closure_age
@@ -280,7 +280,7 @@ generate_default_qx <- function(init_age, sex = "F", closure_age = 130) {
     # Generating default death probabilities
     young_ages <- 55:89
 
-    if (sex == "F") {
+    if (female == 1) {
         AUS_StMoMo <- StMoMo::StMoMoData(rit::mortality_AUS_data, series = "female")
         rates_hist <- rit::mortality_AUS_data$rate$female[as.character(young_ages), ]
     } else {

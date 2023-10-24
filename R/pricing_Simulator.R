@@ -37,7 +37,7 @@ simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL
 
     # If not provided, get states for each path (matrix)
     if (is.null(state)) {
-        state <- get_state_simulation(policy, age = 65, sex = "F", seed, n)
+        state <- get_state_simulation(policy, age = 65, female = 1, seed, n)
     }
 
     # Validate formatting of mortality state data
@@ -66,7 +66,7 @@ simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL
     }
 
     # Get matrix of economic variables for each path
-    data <- get_policy_scenario(policy, age = 65, sex = "F", seed, n, period, econ_var, cohort_death_probs)
+    data <- get_policy_scenario(policy, age = 65, female = 1, seed, n, period, econ_var, cohort_death_probs)
 
     # Initialize output matrix
     cf <- matrix(nrow = n, ncol = ncol(state))
@@ -96,8 +96,8 @@ simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL
 #' Policy object containing necessary parameters (see create_policy_ )
 #' @param age
 #' Initial age of policyholder in years
-#' @param sex
-#' Sex of policyholder
+#' @param female
+#' Gender of policyholder, 0 for male, 1 for female
 #' @param seed
 #' Seed for random generator
 #' @param n
@@ -111,7 +111,7 @@ simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL
 #'
 #' @return
 #' Data frame containing all variables generated using other modules
-get_policy_scenario <- function(policy, age, sex, seed, n, period, econ_var, death_probs) {
+get_policy_scenario <- function(policy, age, female, seed, n, period, econ_var, death_probs) {
 
     var_sim <- econ_var
 
@@ -145,8 +145,8 @@ get_policy_scenario <- function(policy, age, sex, seed, n, period, econ_var, dea
     } else if (policy$name[1] == "PA") {
 
         # Get all relevant health variables for pool
-        pool_r <- get_pool_realised(age, sex, seed, n, policy$size, death_probs)
-        pool_e <- get_pool_expected(age, sex, seed, policy$size, death_probs)
+        pool_r <- get_pool_realised(age, female, seed, n, policy$size, death_probs)
+        pool_e <- get_pool_expected(age, female, seed, policy$size, death_probs)
 
         # Get all relevant economic variables
         stock <- get_stock_return(var_sim)
@@ -206,21 +206,21 @@ get_econ_simulation <- function(state, n, seed) {
     return(filtered_vars)
 }
 
-get_state_simulation <- function(policy, age, sex, seed, n) {
+get_state_simulation <- function(policy, age, female, seed, n) {
     if (policy$name[1] == "CA") {
         if (nrow(policy) == 2) {
-            probs <- get_trans_probs(3, 'S', rit::US_HRS, age, sex == 'F')
+            probs <- get_trans_probs(3, 'S', rit::US_HRS, init_age=age, female = 1)
         } else if (nrow(policy) == 4) {
-            probs <- get_trans_probs(5, 'S', rit::US_HRS_5, age, sex == 'F')
+            probs <- get_trans_probs(5, 'S', rit::US_HRS_5, init_age=age, female = 1)
         } else {
             stop("Error: CA policy object needs to have 2 or 4 rows")
         }
-        return(simulate_health_state_paths(probs, age, cohort = n))
+        return(simulate_health_state_paths(probs, init_age=age, cohort = n))
     } else if (policy$name[1] == "RM") {
-        probs <- get_trans_probs(3, 'S', rit::US_HRS, age, sex == 'F')
-        return(simulate_health_state_paths(probs, age, cohort = n))
+        probs <- get_trans_probs(3, 'S', rit::US_HRS, init_age=age, female == 1)
+        return(simulate_health_state_paths(probs, init_age=age, cohort = n))
     } else {
-        return(get_aggregate_mortality(age, sex, seed, n))
+        return(get_aggregate_mortality(age, female, seed, n))
     }
 }
 
@@ -230,27 +230,27 @@ get_state_simulation <- function(policy, age, sex, seed, n) {
 # ------------------------------------------------------------------------
 # ---- Health State Module
 
-get_health_state_3 <- function(age = 65, sex = "F", seed = 0, n = 1000) {
-    trans_probs <-  get_trans_probs(3, 'T', rit::US_HRS, age, (sex == "F"), year = 2022)
+get_health_state_3 <- function(age = 65, female = 1, seed = 0, n = 1000) {
+    trans_probs <-  get_trans_probs(3, 'T', rit::US_HRS, age, (female = 1), year = 2022)
     return(simulate_health_state_paths(trans_probs, age, 0, n))
 }
 
-get_health_state_5 <- function(age = 65, sex = "F", seed = 0, n = 1000) {
-    trans_probs <-  get_trans_probs(5, 'T', rit::US_HRS_5, age, (sex == "F"), year = 2012, wave_index = 8, latent = 0)
+get_health_state_5 <- function(age = 65, female = 1, seed = 0, n = 1000) {
+    trans_probs <-  get_trans_probs(5, 'T', rit::US_HRS_5, age, (female = 1), year = 2012, wave_index = 8, latent = 0)
     return(simulate_health_state_paths(trans_probs, age, 0, n))
 }
 
 # ------------------------------------------------------------------------
 # ---- Aggregate Mortality Module
 
-get_aggregate_mortality <- function(age = 65, sex = "F", seed = 0, n = 1000) {
+get_aggregate_mortality <- function(age = 65, female = 1, seed = 0, n = 1000) {
     utils::capture.output(suppressWarnings(
-        mortality <- sim_indiv_path(age, sex, death_probs = NULL, closure_age = 130, n)
+        mortality <- sim_indiv_path(age, female, death_probs = NULL, closure_age = 130, n)
     ))
     return(mortality)
 }
 
-get_pool_realised <- function(age = 65, sex = "F", seed = 0, n = 1000, cohort = 1000, death_probs = NULL) {
+get_pool_realised <- function(age = 65, female = 1, seed = 0, n = 1000, cohort = 1000, death_probs = NULL) {
 
     closure_age <- 130
     if (!is.null(death_probs)) {
@@ -258,13 +258,13 @@ get_pool_realised <- function(age = 65, sex = "F", seed = 0, n = 1000, cohort = 
     }
 
     utils::capture.output(suppressWarnings(
-        pool <- sim_cohort_path_realised(age, sex, death_probs = death_probs, closure_age = closure_age, cohort, n)
+        pool <- sim_cohort_path_realised(age, female, death_probs = death_probs, closure_age = closure_age, cohort, n)
     ))
 
     return(pool)
 }
 
-get_pool_expected <- function(age = 65, sex = "F", seed = 0, cohort = 1000, death_probs = NULL) {
+get_pool_expected <- function(age = 65, female = 1, seed = 0, cohort = 1000, death_probs = NULL) {
 
     closure_age <- 130
     if (!is.null(death_probs)) {
@@ -272,7 +272,7 @@ get_pool_expected <- function(age = 65, sex = "F", seed = 0, cohort = 1000, deat
     }
 
     utils::capture.output(suppressWarnings(
-        pool <- sim_cohort_path_expected(age, sex, death_probs = death_probs, closure_age = closure_age, cohort)
+        pool <- sim_cohort_path_expected(age, female, death_probs = death_probs, closure_age = closure_age, cohort)
     ))
 
     return(pool)

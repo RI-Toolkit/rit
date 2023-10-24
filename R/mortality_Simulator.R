@@ -4,8 +4,8 @@
 #'
 #' @param init_age
 #' the initial age of individuals
-#' @param sex
-#' character string denoting the gender of individuals, "F" for female and "M" for male
+#' @param female
+#' numeric denoting the gender of individuals, 1 for female and 0 for male
 #' @param death_probs
 #' a vector of 1-year death probabilities. If not supplied, an M7 age-period-cohort
 #' model will be fitted on \code{mortality_AUS_data} to produce forecasted
@@ -22,7 +22,7 @@
 #'
 #' @export
 #'
-sim_indiv_path <- function(init_age, sex = "F", death_probs = NULL, closure_age = 130, n_sim = 10000, seed = NULL) {
+sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age = 130, n_sim = 10000, seed = NULL) {
 
 # Flagging errors ---------------------------------------------------------
 
@@ -35,9 +35,9 @@ sim_indiv_path <- function(init_age, sex = "F", death_probs = NULL, closure_age 
         stop("initial age must be an integer")
     }
 
-    # sex
-    if (sex != "F" & sex != "M") {
-        stop("sex must be 'F' or 'M'")
+    # female
+    if (female != 1 & female != 0) {
+        stop("female must be 1 or 0")
     }
 
     # death_probs
@@ -75,7 +75,7 @@ sim_indiv_path <- function(init_age, sex = "F", death_probs = NULL, closure_age 
 
     # Generating default death probabilities for males and females if required
     if (is.null(death_probs)) {
-        death_probs <- generate_default_qx(init_age, sex, closure_age)
+        death_probs <- generate_default_qx(init_age, female, closure_age)
     }
 
     # create empty matrix of simulated paths
@@ -106,8 +106,8 @@ sim_indiv_path <- function(init_age, sex = "F", death_probs = NULL, closure_age 
 #'
 #' @param init_age
 #' the initial age of individuals
-#' @param sex
-#' character string denoting the gender of individuals, "F" for female and "M" for male
+#' @param female
+#' numeric denoting the gender of individuals, 1 for female and 0 for male
 #' @param death_probs
 #' a vector of 1-year death probabilities. If not supplied, an M7 age-period-cohort
 #' model will be fitted on \code{mortality_AUS_data} to produce forecasted
@@ -126,7 +126,7 @@ sim_indiv_path <- function(init_age, sex = "F", death_probs = NULL, closure_age 
 #' from a given cohort at each age
 #' @export
 #'
-sim_cohort_path_realised <- function(init_age, sex = "F", death_probs = NULL,
+sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
                                    closure_age = 130, cohort = 1000, n_sim = 10000, seed = NULL) {
 # Flagging errors ---------------------------------------------------------
 
@@ -139,9 +139,9 @@ sim_cohort_path_realised <- function(init_age, sex = "F", death_probs = NULL,
         stop("initial age must be an integer")
     }
 
-    # sex
-    if (sex != "F" & sex != "M") {
-        stop("sex must be 'F' or 'M'")
+    # female
+    if (female != 1 & female != 0) {
+        stop("female must be 1 or 0")
     }
 
     # death_probs
@@ -185,7 +185,7 @@ sim_cohort_path_realised <- function(init_age, sex = "F", death_probs = NULL,
 
     # Generating default death probabilities for males and females if required
     if (is.null(death_probs)) {
-        death_probs <- generate_default_qx(init_age, sex, closure_age)
+        death_probs <- generate_default_qx(init_age, female, closure_age)
     }
 
     # empty matrix of simulated paths
@@ -217,8 +217,8 @@ sim_cohort_path_realised <- function(init_age, sex = "F", death_probs = NULL,
 #'
 #' @param init_age
 #' the initial age of individuals
-#' @param sex
-#' character string denoting the gender of individuals, "F" for female and "M" for male
+#' @param female
+#' numeric denoting the gender of individuals, 1 for female and 0 for male
 #' @param death_probs
 #' a vector of 1-year death probabilities. If not supplied, an M7 age-period-cohort
 #' model will be fitted on \code{mortality_AUS_data} to produce forecasted
@@ -232,7 +232,7 @@ sim_cohort_path_realised <- function(init_age, sex = "F", death_probs = NULL,
 #' vector of expected number of individuals still alive from a given cohort at each age
 #' @export
 #'
-sim_cohort_path_expected <- function(init_age, sex = "F", death_probs = NULL,
+sim_cohort_path_expected <- function(init_age, female = 1, death_probs = NULL,
                                      closure_age = 130, cohort = 1000) {
 
 # Flagging errors ---------------------------------------------------------
@@ -246,9 +246,9 @@ sim_cohort_path_expected <- function(init_age, sex = "F", death_probs = NULL,
         stop("initial age must be an integer")
     }
 
-    # sex
-    if (sex != "F" & sex != "M") {
-        stop("sex must be 'F' or 'M'")
+    # female
+    if (female != 1 & female != 0) {
+        stop("female must be 1 or 0")
     }
 
     # death_probs
@@ -284,7 +284,7 @@ sim_cohort_path_expected <- function(init_age, sex = "F", death_probs = NULL,
 
     # Generating default death probabilities for males and females if required
     if (is.null(death_probs)) {
-        death_probs <- generate_default_qx(init_age, sex, closure_age)
+        death_probs <- generate_default_qx(init_age, female, closure_age)
     }
 
     # cumulative survival probabilities
