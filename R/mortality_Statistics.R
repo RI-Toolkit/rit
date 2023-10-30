@@ -303,32 +303,57 @@ plot_exp_cfl <- function(exp_cfl_rates, years, level = 95) {
   exp_cfl_lower <- apply(exp_cfl_rates, 2, stats::quantile, 1 / 2 - level / 200)
   exp_cfl_upper <- apply(exp_cfl_rates, 2, stats::quantile, 1 / 2 + level / 200)
 
-  # Computing x and y limits of plot
-  plot_ylim <- range(exp_cfl_mean, exp_cfl_lower, exp_cfl_upper, na.rm = TRUE)
-  plot_xlim <- range(years)
+  # # Computing x and y limits of plot
+  # plot_ylim <- range(exp_cfl_mean, exp_cfl_lower, exp_cfl_upper, na.rm = TRUE)
+  # plot_xlim <- range(years)
+  #
+  # # Initial plot of mean
+  # plot(x = years,
+  #      y = exp_cfl_mean,
+  #      xlim = plot_xlim,
+  #      ylim = plot_ylim,
+  #      type = "l",
+  #      xlab = "Years",
+  #      ylab = "Expected Curtate Future Lifetime (Years)")
+  #
+  # # Preparing fanplot parameters
+  # fan_col <- grDevices::colorRampPalette(c("grey60", grDevices::rgb(1, 1, 1)))
+  # fan_n <- 1
+  #
+  # # Adding confidence intervals
+  # fanplot::fan(rbind(exp_cfl_lower, exp_cfl_upper),
+  #              data.type = "values",
+  #              start = years[1],
+  #              probs = c(1 / 2 - level / 200, 1 / 2 + level / 200),
+  #              fan.col = fan_col, n.fan = fan_n + 1, ln = NULL)
+  #
+  # # Overlaying mean on top of confidence intervals
+  # graphics::lines(x = years, y = exp_cfl_mean)
 
-  # Initial plot of mean
-  plot(x = years,
-       y = exp_cfl_mean,
-       xlim = plot_xlim,
-       ylim = plot_ylim,
-       type = "l",
-       xlab = "Years",
-       ylab = "Expected Curtate Future Lifetime (Years)")
+  ##########################
 
-  # Preparing fanplot parameters
-  fan_col <- grDevices::colorRampPalette(c("grey60", grDevices::rgb(1, 1, 1)))
-  fan_n <- 1
+  quantile_low = (1 / 2 - level / 200)*100
+  quantile_high= (1 / 2 + level / 200)*100
 
-  # Adding confidence intervals
-  fanplot::fan(rbind(exp_cfl_lower, exp_cfl_upper),
-               data.type = "values",
-               start = years[1],
-               probs = c(1 / 2 - level / 200, 1 / 2 + level / 200),
-               fan.col = fan_col, n.fan = fan_n + 1, ln = NULL)
+  # create dataframe for ggplot
+  exp_cfl <- data.frame('years' = years,
+                     'exp_cfl_mean'=exp_cfl_mean,
+                     'exp_cfl_lower' = exp_cfl_lower,
+                     'exp_cfl_upper' = exp_cfl_upper
+  )
 
-  # Overlaying mean on top of confidence intervals
-  graphics::lines(x = years, y = exp_cfl_mean)
+  updated_df <- exp_cfl %>%
+      dplyr::select(years, exp_cfl_mean, exp_cfl_lower, exp_cfl_upper) %>%
+      tidyr::gather(key = 'Type', value = 'value', -years)
+
+  surv_plot=ggplot2::ggplot(updated_df, aes(x = years, y = value)) +
+      ggplot2::geom_line(aes(color = Type)) +
+      ggplot2::scale_color_manual(labels = c(paste(quantile_low,'% Quantile', sep = ''), 'Mean', paste(quantile_high,'% Quantile', sep = '')),
+                                  values = c('lightcoral', 'darkolivegreen2', 'skyblue1')) +
+      # ggplot2::ggtitle(paste(Probability of Surviving for Age', init_age, 'in Year', target_year))+
+      ggplot2::ggtitle('')+
+      ggplot2::labs(x = 'Years', y = 'Expected Curtate Future Lifetime (Years)')
+  return(surv_plot)
 
 }
 
@@ -425,30 +450,57 @@ plot_surv_sim <- function(surv_sim, init_age, target_year, level = 95, years = N
   surv_lower <- apply(surv_sim_cohort, 2, stats::quantile, 1 / 2 - level / 200)
   surv_upper <- apply(surv_sim_cohort, 2, stats::quantile, 1 / 2 + level / 200)
 
-  # Computing x and y limits of plot
-  plot_ylim <- range(surv_mean, surv_lower, surv_upper, na.rm = TRUE)
-  plot_xlim <- c(surv_time[1], utils::tail(surv_time, 1))
+  # # Computing x and y limits of plot
+  # plot_ylim <- range(surv_mean, surv_lower, surv_upper, na.rm = TRUE)
+  # plot_xlim <- c(surv_time[1], utils::tail(surv_time, 1))
+  #
+  # # Generating new plot
+  # plot(NULL,
+  #      xlim = plot_xlim,
+  #      ylim = plot_ylim,
+  #      xlab = "Survival Time (Years)",
+  #      ylab = "Survival Probability",
+  #      main = paste("Age", init_age, "in Year", target_year))
+  #
+  # # Preparing fanplot parameters
+  # fan_col <- grDevices::colorRampPalette(c("grey60", grDevices::rgb(1, 1, 1)))
+  # fan_n <- 1
+  #
+  # # Adding confidence intervals
+  # fanplot::fan(rbind(surv_lower, surv_upper),
+  #              data.type = "values",
+  #              start = surv_time[1],
+  #              probs = c(1 / 2 - level / 200, 1 / 2 + level / 200),
+  #              fan.col = fan_col, n.fan = fan_n + 1, ln = NULL)
+  #
+  # # Plot mean
+  # graphics::lines(x = surv_time, y = surv_mean, type = 'l')
 
-  # Generating new plot
-  plot(NULL,
-       xlim = plot_xlim,
-       ylim = plot_ylim,
-       xlab = "Survival Time (Years)",
-       ylab = "Survival Probability",
-       main = paste("Age", init_age, "in Year", target_year))
+  ##########################
 
-  # Preparing fanplot parameters
-  fan_col <- grDevices::colorRampPalette(c("grey60", grDevices::rgb(1, 1, 1)))
-  fan_n <- 1
+  quantile_low = (1 / 2 - level / 200)*100
+  quantile_high= (1 / 2 + level / 200)*100
 
-  # Adding confidence intervals
-  fanplot::fan(rbind(surv_lower, surv_upper),
-               data.type = "values",
-               start = surv_time[1],
-               probs = c(1 / 2 - level / 200, 1 / 2 + level / 200),
-               fan.col = fan_col, n.fan = fan_n + 1, ln = NULL)
+  # create age axis
+  ages <- init_age:(init_age+dim(surv_sim)[1]-1)
 
-  # Plot mean
-  graphics::lines(x = surv_time, y = surv_mean, type = 'l')
+  # create dataframe for ggplot
+  surv <- data.frame('age' = ages,
+                            'surv_mean'=surv_mean,
+                            'surv_lower' = surv_lower,
+                            'surv_upper' = surv_upper
+  )
 
+  updated_df <- surv %>%
+      dplyr::select(age, surv_mean, surv_lower, surv_upper) %>%
+      tidyr::gather(key = 'Type', value = 'value', -age)
+
+  surv_plot=ggplot2::ggplot(updated_df, aes(x = age, y = value)) +
+      ggplot2::geom_line(aes(color = Type)) +
+      ggplot2::scale_color_manual(labels = c(paste(quantile_low,'% Quantile', sep = ''), 'Mean', paste(quantile_high,'% Quantile', sep = '')),
+                                  values = c('lightcoral', 'darkolivegreen2', 'skyblue1')) +
+      # ggplot2::ggtitle(paste(Probability of Surviving for Age', init_age, 'in Year', target_year))+
+      ggplot2::ggtitle(paste('Probability of Surviving with ',level, '% Confidence Intervals', sep = ''))+
+      ggplot2::labs(x = 'Ages', y = '')
+  return(surv_plot)
 }
