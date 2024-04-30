@@ -11,7 +11,7 @@
 #' -1 for first time entering the dead state
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
 #' @param init_state
@@ -146,7 +146,7 @@ return(first_time)
 #' 4 for total time alive or not in dead state
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
 #' @param init_state
@@ -354,7 +354,7 @@ health5_stats_produce=function(input){
 #' -1 for first time entering the dead state
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
 #' @param init_state

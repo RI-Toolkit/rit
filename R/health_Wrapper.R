@@ -156,7 +156,7 @@ simulate_life_table <- function(n_states, model_type, param_file, init_age, fema
 #' @param trans_probs
 #' a list of transition probability matrices, preferably generated from \code{\link[tshm]{get_trans_probs}}.
 #' @param init_age
-#' integer between 65 and 110 denoting current age. This has to the be same as the initial
+#' integer between 0 and 110 denoting current age. This has to the be same as the initial
 #' age used in the generation of transition probability matrices.
 #' @param init_state
 #' integer value
@@ -197,7 +197,7 @@ simulate_health_state_paths <- function(trans_probs, init_age, init_state = 0, c
 #' Create a plot of survival probabilities to different states.
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting current age. This has to the be same as the initial
+#' integer between 0 and 110 denoting current age. This has to the be same as the initial
 #' age used in the generation of transition probability matrices.
 #' @param init_state
 #' integer value
@@ -249,7 +249,7 @@ prob_plots <- function (init_age, init_state, trans_probs) {
 #' -1 for first time entering the dead state
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
 #' @param init_state

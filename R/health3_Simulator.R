@@ -29,7 +29,7 @@ health3_simulate_paths <- function(trans_probs, init_age, init_state, cohort) {
     stop('invalid state, 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<65 | init_age>110) {
+  if (init_age<0 | init_age>110) {
     stop('invalid age')
   }
 

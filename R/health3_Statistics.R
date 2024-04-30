@@ -12,7 +12,7 @@
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
 #' @param init_state
@@ -54,7 +54,7 @@ health3_afl <- function(model_type, init_age, init_state, trans_probs = NULL, si
     stop('invalid state, use 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<65 | init_age>110) {
+  if (init_age<0 | init_age>110) {
     stop('invalid age')
   }
 
@@ -119,7 +119,7 @@ if (model_type=='S' | model_type=='T'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual
+#' integer between 0 and 110 denoting initial age of individual
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -160,7 +160,7 @@ health3_hfl <- function(model_type, init_age, init_state, trans_probs = NULL, si
     stop('invalid state, use 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<65 | init_age>110) {
+  if (init_age<0 | init_age>110) {
     stop('invalid age')
   }
 
@@ -234,7 +234,7 @@ if (model_type=='F'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting age of individual
+#' integer between 0 and 110 denoting age of individual
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -276,7 +276,7 @@ health3_dfl <- function(model_type, init_age, init_state, trans_probs = NULL, si
     stop('invalid state, use 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<65 | init_age>110) {
+  if (init_age<0 | init_age>110) {
     stop('invalid age')
   }
 
@@ -352,7 +352,7 @@ if (model_type=='F'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual
+#' integer between 0 and 110 denoting initial age of individual
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -385,7 +385,7 @@ if (model_type=='F'){
 #' @examples example
 health3_time_to_disabled <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
-  if (init_age<65 | init_age>110) {
+  if (init_age<0 | init_age>110) {
     stop('invalid age')
   }
 
@@ -463,7 +463,7 @@ if (model_type=='F'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 65 and 110 denoting initial age of individual
+#' integer between 0 and 110 denoting initial age of individual
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -501,7 +501,7 @@ if (model_type=='S' | model_type=='T'){
         stop('invalid state, use 0 for healthy and 1 for disabled')
     }
 
-    if (init_age<65 | init_age>110) {
+    if (init_age<0 | init_age>110) {
         stop('invalid age')
     }
 
