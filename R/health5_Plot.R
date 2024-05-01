@@ -30,8 +30,8 @@ health5_prob_plots <- function(init_age, init_state, trans_probs) {
     stop('initial age must be an integer')
   }
 
-  if (init_state != 0 & init_state != 1) {
-    stop('invalid state; enter 0 for healthy, 1 for disabled')
+  if (init_state != 0 & init_state != 1 & init_state != 2 & init_state != 3) {
+    stop('invalid state; enter 0 for H, 1 for M, 2 for D, 3 for MD')
   }
 
 lifetable=create_life_table(trans_probs, init_age, init_state, cohort = 1)
