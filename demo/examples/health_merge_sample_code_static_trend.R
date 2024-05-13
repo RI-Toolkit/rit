@@ -1,5 +1,5 @@
 # set working directory and load packages
-setwd("C:/Users/z5041702/GitHub/rit")
+setwd("C:/Users/yuxin/OneDrive/Documents/GitHub/rit")
 
 library(devtools)
 load_all(export_all=FALSE)

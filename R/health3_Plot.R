@@ -143,7 +143,7 @@ health3_prob_plots <- function(init_age, init_state, trans_probs) {
   surv_plot <- ggplot2::ggplot(updated_df, aes(x = age, y = value)) +
      ggplot2::geom_line(aes(color = Type)) +
      ggplot2::scale_color_manual(labels = c('Alive', 'Disabled', 'Healthy'),
-                       values = c('darkolivegreen2', 'lightcoral', 'skyblue1')) +
+                       values = c('darkolivegreen3', 'lightcoral', 'skyblue2')) +
      # ggplot2::ggtitle('Probability of Surviving to each Different State')+
      ggplot2::labs(x = "Ages", y = "")
   return(surv_plot)

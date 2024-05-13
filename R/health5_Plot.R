@@ -55,7 +55,7 @@ lifetable=create_life_table(trans_probs, init_age, init_state, cohort = 1)
   surv_plot <- ggplot2::ggplot(updated_df, aes(x = age, y = value)) +
       ggplot2::geom_line(aes(color = Type)) +
       ggplot2::scale_color_manual(labels = c('Alive', 'D', 'H', 'M', 'MD'),
-                       values = c('darkolivegreen2', 'lightcoral', 'skyblue1','blue','yellow')) +
+                       values = c('darkolivegreen3', 'lightcoral', 'skyblue2','blue','darkgoldenrod1')) +
       # ggplot2::ggtitle('Probability of Surviving to each Different State')+
       ggplot2::labs(x = "Ages", y = "")
   return(surv_plot)
