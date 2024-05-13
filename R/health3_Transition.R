@@ -31,7 +31,7 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, female, ye
     b3 <- gamma_age3 <- gamma_gender3 <- gamma_time3 <- a3 <- NULL
     b4 <- gamma_age4 <- gamma_gender4 <- gamma_time4 <- a4 <- NULL
     # flagging errors
-    if (init_age < 65 | init_age >= 110) {
+    if (init_age < 0 | init_age >= 110) {
       stop('invalid age')
     }
 
