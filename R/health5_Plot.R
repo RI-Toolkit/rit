@@ -51,11 +51,12 @@ lifetable=create_life_table(trans_probs, init_age, init_state, cohort = 1)
   updated_df <- survival_df %>%
     dplyr::select(age, Alive, H, M, D, MD) %>%
     tidyr::gather(key = 'Type', value = 'value', -age)
+  updated_df$Type <- factor(updated_df$Type, levels = c('Alive', 'H', 'M', 'D', 'MD'))
 
   surv_plot <- ggplot2::ggplot(updated_df, aes(x = age, y = value)) +
       ggplot2::geom_line(aes(color = Type)) +
-      ggplot2::scale_color_manual(labels = c('Alive', 'D', 'H', 'M', 'MD'),
-                       values = c('darkolivegreen3', 'lightcoral', 'skyblue2','blue','darkgoldenrod1')) +
+      ggplot2::scale_color_manual(labels = c('Alive', 'H', 'M', 'D', 'MD'),
+                                  values = c('darkolivegreen3', 'skyblue2', 'blue', 'lightcoral', 'darkgoldenrod1')) +
       # ggplot2::ggtitle('Probability of Surviving to each Different State')+
       ggplot2::labs(x = "Ages", y = "")
   return(surv_plot)
