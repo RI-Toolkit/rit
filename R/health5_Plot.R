@@ -58,7 +58,13 @@ lifetable=create_life_table(trans_probs, init_age, init_state, cohort = 1)
       ggplot2::scale_color_manual(labels = c('Alive', 'H', 'M', 'D', 'MD'),
                                   values = c('darkolivegreen3', 'skyblue2', 'blue', 'lightcoral', 'darkgoldenrod1')) +
       # ggplot2::ggtitle('Probability of Surviving to each Different State')+
-      ggplot2::labs(x = "Ages", y = "")
+      ggplot2::labs(x = "Ages", y = "")+ theme_classic() +
+      theme(legend.title = element_blank(),
+        legend.spacing.y = unit(0, "mm"),
+        panel.border = element_rect(colour = "black", fill=NA),
+        aspect.ratio = 1, axis.text = element_text(colour = 1, size = 12),
+        legend.background = element_blank(),
+        legend.box.background = element_rect(colour = "black"))
   return(surv_plot)
 }
 
