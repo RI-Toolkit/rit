@@ -128,7 +128,7 @@ health3_simulate_life_table <- function(init_age, female, year, param_file, init
     stop('n_sim must be a positive integer')
     }
 
-    if (init_age < 65 | init_age > 110) {
+    if (init_age < 0 | init_age > 110) {
     stop('invalid age')
     }
 
