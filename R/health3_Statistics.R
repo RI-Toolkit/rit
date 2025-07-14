@@ -46,7 +46,7 @@
 #' @export
 #'
 #' @examples example
-health3_afl <- function(model_type, init_age, closure_age = 130, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_afl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
   if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
@@ -155,7 +155,7 @@ if (model_type=='S' | model_type=='T'){
 #' @export
 #'
 #' @examples example
-health3_hfl <- function(model_type, init_age, closure_age = 130, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_hfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
     if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
@@ -274,7 +274,7 @@ if (model_type=='F'){
 #' @export
 #'
 #' @examples example
-health3_dfl <- function(model_type, init_age, closure_age = 130, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_dfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
     if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
@@ -395,7 +395,7 @@ if (model_type=='F'){
 #' @export
 #'
 #' @examples example
-health3_time_to_disabled <- function(model_type, init_age, closure_age = 130, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_time_to_disabled <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
   if (init_age<0 | init_age>closure_age) {
     stop('invalid age')

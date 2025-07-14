@@ -31,7 +31,7 @@
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
 #'
-get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_age = 130, female, year = 2012, wave_index = 8, latent = 0) {
+get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, wave_index = 8, latent = 0) {
 
   if (n_states == 5) {
     if (year != 2012) {
@@ -82,7 +82,7 @@ get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_
 #' latent = 0)
 #' lifetable <- create_life_table(trans_probs, init_age=65, init_state = 0, cohort = 100000)
 #'
-create_life_table <- function(trans_probs, init_age, closure_age = 130, init_state = 0, cohort = 100000) {
+create_life_table <- function(trans_probs, init_age, closure_age = 110, init_state = 0, cohort = 100000) {
 
   if (length(trans_probs[[1]][1,]) == 3) {
     return(health3_create_life_table(trans_probs, init_age, closure_age, init_state, cohort))
@@ -139,7 +139,7 @@ create_life_table <- function(trans_probs, init_age, closure_age = 130, init_sta
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, init_state = 0,
 #' wave_index = 8,latent=0,n_sim=100,cohort=100,mean=FALSE)
 #'
-simulate_life_table <- function(n_states, model_type, param_file, init_age, closure_age = 130, female, year = 2012, init_state = 0, wave_index = 8,latent=0,n_sim=100,cohort=100000,mean=FALSE) {
+simulate_life_table <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, init_state = 0, wave_index = 8,latent=0,n_sim=100,cohort=100000,mean=FALSE) {
   if (model_type != 'F') {
     stop('use frailty model to simulate lifetables')
   }
@@ -187,7 +187,7 @@ simulate_life_table <- function(n_states, model_type, param_file, init_age, clos
 #' latent = 0)
 #' simulated_path <- simulate_health_state_paths(trans_probs, init_age=65,
 #' init_state = 0, cohort = 10000)
-simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 130, init_state = 0, cohort = 10000) {
+simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 110, init_state = 0, cohort = 10000) {
 
   if (length(trans_probs[[1]][1,]) == 3) {
     return(health3_simulate_paths(trans_probs, init_age, closure_age, init_state, cohort))
@@ -228,7 +228,7 @@ simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 130
 #' latent = 0)
 #' prob_plots(init_state=0, init_age=65, trans_probs=trans_probs)
 
-prob_plots <- function (init_age, closure_age = 130, init_state, trans_probs) {
+prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs) {
 
     if (length(trans_probs[[1]][1,]) == 3) {
         return(health3_prob_plots(init_age, closure_age, init_state, trans_probs))
@@ -299,7 +299,7 @@ prob_plots <- function (init_age, closure_age = 130, init_state, trans_probs) {
 #' @export
 #'
 #' @examples example
-health_stats <- function (model_type, n_states, init_age, closure_age = 130, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
+health_stats <- function (model_type, n_states, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
     if (n_states == 3) {
         return(health3_survival_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, param_file, n))
     }

@@ -36,7 +36,7 @@ health5_prob_plots <- function(init_age, closure_age, init_state, trans_probs) {
     stop('invalid state; enter 0 for H, 1 for M, 2 for D, 3 for MD')
   }
 
-lifetable=create_life_table(trans_probs, init_age, init_state, cohort = 1)
+lifetable=create_life_table(trans_probs, init_age, closure_age, init_state, cohort = 1)
 
   # create age axis
   ages <- init_age:closure_age
