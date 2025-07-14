@@ -110,7 +110,7 @@ health3_prob_plots <- function(init_age, closure_age, init_state, trans_probs) {
     stop('invalid state; enter 0 for healthy, 1 for disabled')
   }
 
-  if (length(trans_probs) != closure_age + 1 - init_age) {
+  if (length(trans_probs) != (closure_age + 1 - init_age)) {
     stop('initial age does not correspond to the number of transition probability matrices')
   }
 

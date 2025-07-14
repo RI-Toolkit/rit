@@ -132,7 +132,7 @@ health5_get_trans_probs=function(model_type, param_file, init_age, closure_age, 
     # list of 46 matrices of transition probabilities for this simulation
     trans_prob_matrix=list()
     #list of
-    state_status=matrix(nrow = closure_age-init_age+2, ncol = 5)
+    state_status=matrix(nrow = (closure_age-init_age+2), ncol = 5)
     state_status[1,]=c(1,0,0,0,0) # initial state status is 1 in the healthy state and 0 for the others
     #  for (age in 65:closure_age){
     #    state_status[[age-63]]=cbind(c(0,0,0,0,0)) # construct the list to be filled later

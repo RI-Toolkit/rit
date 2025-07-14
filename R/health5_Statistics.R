@@ -59,19 +59,19 @@ if (model_type=='S' | model_type=='T'){
         stop('no transition probability matrices or simulated paths were provided')
     }
     if (!is.null(simulated_path) & !is.null(trans_probs)) {
-        if (ncol(simulated_path) != closure_age+1-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
         # simulate path
         simulated_path <- simulated_path
     } else if (is.null(trans_probs)) {
-        if (ncol(simulated_path) != closure_age+1-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
 
         simulated_path <- simulated_path
     } else {
-        if (length(trans_probs) != closure_age+1-init_age) {
+        if (length(trans_probs) != (closure_age+1-init_age)) {
             stop('initial age does not correspond with number of transition probability matrices')
         }
         simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)
@@ -196,18 +196,18 @@ if (model_type=='S' | model_type=='T'){
         stop('no transition probability matrices or simulated paths were provided')
     }
     if (!is.null(simulated_path) & !is.null(trans_probs)) {
-        if (ncol(simulated_path) != closure_age+1-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
         # simulate path
         simulated_path <- simulated_path
     } else if (is.null(trans_probs)) {
-        if (ncol(simulated_path) != closure_age+1-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
         simulated_path <- simulated_path
     } else {
-        if (length(trans_probs) != closure_age+1-init_age) {
+        if (length(trans_probs) != (closure_age+1-init_age)) {
             stop('initial age does not correspond with number of transition probability matrices')
         }
         simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)

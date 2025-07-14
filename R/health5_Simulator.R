@@ -22,7 +22,7 @@ health5_simulate_paths <- function(list_trans_probs, init_age, closure_age, init
     # init_state 0 for H, 1 for M, 2 for D, 3 for MD, -1 for Dead
 
     # create empty matrix to contain simulated population
-    simulated_pop <- matrix(0, nrow = cohort, ncol = closure_age-init_age+2)
+    simulated_pop <- matrix(0, nrow = cohort, ncol = (closure_age-init_age+2))
 
     # initialise all individuals
     simulated_pop[, 1] <- init_state
@@ -78,7 +78,7 @@ health5_simulate_paths <- function(list_trans_probs, init_age, closure_age, init
 health5_create_life_table=function(list_trans_probs,init_age, closure_age,init_state,cohort){
         # list of 46 matrices of transition probabilities for this simulation
         #list of lifetables
-        state_status=matrix(nrow = closure_age-init_age+1, ncol = 20)
+        state_status=matrix(nrow = (closure_age-init_age+1), ncol = 20)
         colnames(state_status) <- c("Age", "Alive", "H", "M", "D", "MD", "Dead","H_M","H_D","H_MD","H_Dead","M_MD","M_Dead","D_H","D_M","D_MD","D_Dead","MD_M","MD_Dead","H.M.D.MD_Dead")
         if (init_state==0){
             # initial state status is 1 in the healthy state and 0 for the others

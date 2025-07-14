@@ -39,7 +39,7 @@ health3_simulate_paths <- function(trans_probs, init_age, closure_age, init_stat
     stop('initial age must be an integer')
   }
 
-  if (length(trans_probs) != closure_age + 1 - init_age) {
+  if (length(trans_probs) != (closure_age + 1 - init_age)) {
     stop('initial age does not correspond to the number of transition probability matrices')
   }
 
@@ -52,7 +52,7 @@ health3_simulate_paths <- function(trans_probs, init_age, closure_age, init_stat
   }
 
   # create empty matrix to contain simulated population
-  simulated_pop <- matrix(0, nrow = cohort, ncol = closure_age-init_age+2)
+  simulated_pop <- matrix(0, nrow = cohort, ncol = (closure_age-init_age+2))
 
   # initialise all individuals
   simulated_pop[, 1] <- init_state

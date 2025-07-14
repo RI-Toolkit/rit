@@ -181,19 +181,19 @@ if (model_type=='S' | model_type=='T'){
 
   # generate simulation path, or just take it from input
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age+1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age+1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != closure_age+1-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -300,19 +300,19 @@ if (model_type=='S' | model_type=='T'){
 
   # simulate path and count disabled time
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != closure_age+1-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -417,19 +417,19 @@ if (model_type=='S' | model_type=='T'){
 
   # simulate path or just use path given
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != closure_age+1-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -530,19 +530,19 @@ if (model_type=='S' | model_type=='T'){
 
   # simulate path or just use path given
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != closure_age+1-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != closure_age+1-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
