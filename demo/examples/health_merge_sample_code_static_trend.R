@@ -14,7 +14,6 @@ model_type='T'
 
 init_age=65
 female=0
-# wave_index=8 # wave index
 latent=0 # initial value of latent factor
 init_state = 0
 
