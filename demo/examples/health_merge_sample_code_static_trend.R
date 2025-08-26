@@ -1,22 +1,25 @@
 # set working directory and load packages
-setwd("C:/Users/yuxin/OneDrive/Documents/GitHub/rit")
+# setwd("C:/Users/yuxin/OneDrive/Documents/GitHub/rit")
 
 library(devtools)
 load_all(export_all=FALSE)
 
-param_file_3=US_HRS
+param_file_3=US_HRS_3
+# param_file_3=china_CLHLS
 param_file_5=US_HRS_5
+# param_file_5=AU_SDAC_5
 
+# Australian data does not support the frailty-type model
 model_type='T'
 
 init_age=65
 female=0
-wave_index=8 # wave index
+# wave_index=8 # wave index
 latent=0 # initial value of latent factor
 init_state = 0
 
-trans_probs_3state=get_trans_probs(n_states=3, model_type, param_file=param_file_3, init_age, female, year = 2012, wave_index = 8, latent = 0)
-trans_probs_5state=get_trans_probs(n_states=5, model_type, param_file=param_file_5, init_age, female, year = 2012, wave_index = 8, latent = 0)
+trans_probs_3state=get_trans_probs(n_states=3, model_type, param_file=param_file_3, init_age, female, year = 2012, latent = 0)
+trans_probs_5state=get_trans_probs(n_states=5, model_type, param_file=param_file_5, init_age, female, year = 2012, latent = 0)
 
 l3=create_life_table(trans_probs_3state, init_age, init_state = 0, cohort = 100000)
 l5=create_life_table(trans_probs_5state, init_age, init_state = 0, cohort = 100000)

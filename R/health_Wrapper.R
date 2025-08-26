@@ -29,26 +29,33 @@
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
 #'
-get_trans_probs <- function(n_states, model_type, param_file, init_age, female, year = 2012, wave_index = 8, latent = 0) {
+get_trans_probs <- function(n_states, model_type, param_file, init_age, female, year = 2012, latent = 0) {
 
-  if (n_states == 5) {
-    if (year != 2012) {
-      wave_index = (year - 1998) / 2 + 1
+    # wave_index is removed from the input
+    # let the user only input year is easier to use
+    # if (n_states == 5) {
+    #   if (year != 2012) {
+    #     wave_index = (year - 1998) / 2 + 1
+    #   }
+    #   else if (wave_index != 8) {
+    #     year = 2 * (wave_index - 1) + 1998
+    #   }
+    # }
+
+    if (n_states == 5) {
+        # Calculate wave_index directly from year (continuous allowed)
+        wave_index <- (year - 1998) / 2 + 1
     }
-    else if (wave_index != 8) {
-      year = 2 * (wave_index - 1) + 1998
+
+    if (n_states == 3) {
+        return(health3_get_trans_probs(model_type, param_file, init_age, female, year))
     }
-  }
 
-  if (n_states == 3) {
-    return(health3_get_trans_probs(model_type, param_file, init_age, female, year))
-  }
+    if (n_states == 5) {
+        return(health5_get_trans_probs(model_type, param_file, init_age, female, wave_index, latent))
+    }
 
-  if (n_states == 5) {
-    return(health5_get_trans_probs(model_type, param_file, init_age, female, wave_index, latent))
-  }
-
-  stop('invalid n_states')
+    stop('invalid n_states')
 }
 
 
