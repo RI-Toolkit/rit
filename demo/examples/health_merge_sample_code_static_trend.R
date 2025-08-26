@@ -18,8 +18,8 @@ female=0
 latent=0 # initial value of latent factor
 init_state = 0
 
-trans_probs_3state=get_trans_probs(n_states=3, model_type, param_file=param_file_3, init_age, female, year = 2012, latent = 0)
-trans_probs_5state=get_trans_probs(n_states=5, model_type, param_file=param_file_5, init_age, female, year = 2012, latent = 0)
+trans_probs_3state=get_trans_probs(n_states=3, model_type, param_file=param_file_3, init_age, closure_age = 110, female, year = 2012, latent = 0)
+trans_probs_5state=get_trans_probs(n_states=5, model_type, param_file=param_file_5, init_age, closure_age = 110, female, year = 2012, latent = 0)
 
 l3=create_life_table(trans_probs_3state, init_age, init_state = 0, cohort = 100000)
 l5=create_life_table(trans_probs_5state, init_age, init_state = 0, cohort = 100000)
@@ -38,5 +38,5 @@ health_stats(model_type, n_states=5, init_age=65, init_state=0, trans_probs=tran
 # health_stats(model_type, n_states=5, init_age=65, init_state=0, simulated_path = simulated_path_5)
 # health_stats(model_type, n_states=5, init_age=65, init_state=0, trans_probs=trans_probs_5state, simulated_path = simulated_path_5)
 
-prob_plots(init_age=65, init_state = 0, trans_probs_3state)
-prob_plots(init_age=65, init_state = 0, trans_probs_5state)
+prob_plots(init_age=65, closure_age = 110, init_state = 0, trans_probs_3state)
+prob_plots(init_age=65, closure_age = 110, init_state = 0, trans_probs_5state)
