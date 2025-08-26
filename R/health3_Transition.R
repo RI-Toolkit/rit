@@ -3,7 +3,7 @@
 #' Calculate transition probability matrices
 #'
 #' Creates a list of transition probability matrices starting from initial age to
-#' max age of 110 for 3 state model
+#' max age of closure age for 3 state model
 #'
 #' @param model_type
 #' string that selects model type; S for Static, T for Trend and F for Frailty
@@ -11,6 +11,8 @@
 #' string for file path of parameter file OR a tibble/dataframe of parameters
 #' @param init_age
 #' integer denoting age of policy holder
+#' @param closure_age
+#' maximum life span
 #' @param female
 #' takes values 1 or 0, where 1 indicates policyholder is female
 #' @param year
@@ -25,13 +27,13 @@
 #'
 #' @examples example
 #'
-health3_get_trans_probs <- function(model_type, param_file, init_age, female, year) {
+health3_get_trans_probs <- function(model_type, param_file, init_age, closure_age, female, year) {
     b1 <- gamma_age1 <- gamma_gender1 <- gamma_time1 <- a1 <- NULL
     b2 <- gamma_age2 <- gamma_gender2 <- gamma_time2 <- a2 <- NULL
     b3 <- gamma_age3 <- gamma_gender3 <- gamma_time3 <- a3 <- NULL
     b4 <- gamma_age4 <- gamma_gender4 <- gamma_time4 <- a4 <- NULL
     # flagging errors
-    if (init_age < 0 | init_age >= 110) {
+    if (init_age < 0 | init_age >= closure_age) {
       stop('invalid age')
     }
 
@@ -113,7 +115,7 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, female, ye
 
     # transition 1 rates
     trans1 <- c()
-    for (i in init_age:109) {
+    for (i in init_age:(closure_age-1)) {
       # integrate across each year to get annual piecewise transition rates
       integral <- stats::integrate(cox_model, i, i+1, init_age = init_age, female = female,
                             year = year, model_type = model_type, b = b1, gamma_age = gamma_age1,
@@ -124,7 +126,7 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, female, ye
 
     # transition 2 rates
     trans2 <- c()
-    for (i in init_age:109) {
+    for (i in init_age:(closure_age-1)) {
       integral <- stats::integrate(cox_model, i, i+1, init_age = init_age, female = female,
                             year = year, model_type = model_type, b = b2, gamma_age = gamma_age2,
                             gamma_gender = gamma_gender2, gamma_time = gamma_time2, a = a2, v = v)
@@ -134,7 +136,7 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, female, ye
 
     # transition 3 rates
     trans3 <- c()
-    for (i in init_age:109) {
+    for (i in init_age:(closure_age-1)) {
       integral <- stats::integrate(cox_model, i, i+1, init_age = init_age, female = female,
                             year = year, model_type = model_type, b = b3, gamma_age = gamma_age3,
                             gamma_gender = gamma_gender3, gamma_time = gamma_time3, a = a3, v = v)
@@ -144,7 +146,7 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, female, ye
 
     # transition 4 rates
     trans4 <- c()
-    for (i in init_age:109) {
+    for (i in init_age:(closure_age-1)) {
       integral <- stats::integrate(cox_model, i, i+1, init_age = init_age, female = female,
                             year = year, model_type = model_type, b = b4, gamma_age = gamma_age4,
                             gamma_gender = gamma_gender4, gamma_time = gamma_time4, a = a4, v = v)

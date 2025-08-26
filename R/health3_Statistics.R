@@ -12,8 +12,11 @@
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 0 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and closure age denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
+#'
+#' @param closure_age
+#' maximum life span
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -43,7 +46,7 @@
 #' @export
 #'
 #' @examples example
-health3_afl <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_afl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
   if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
@@ -54,7 +57,7 @@ health3_afl <- function(model_type, init_age, init_state, trans_probs = NULL, si
     stop('invalid state, use 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<0 | init_age>110) {
+  if (init_age<0 | init_age>closure_age) {
     stop('invalid age')
   }
 
@@ -68,19 +71,19 @@ if (model_type=='S' | model_type=='T'){
   }
 
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != closure_age + 1- init_age + 1) {
       stop('initial age does not correspond with size of simulated path')
     }
     # simulate path
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != closure_age + 1 - init_age + 1) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != 111-init_age) {
+    if (length(trans_probs) != closure_age + 1 - init_age) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -119,7 +122,10 @@ if (model_type=='S' | model_type=='T'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 0 and 110 denoting initial age of individual
+#' integer between 0 and closure age denoting initial age of individual
+#'
+#' @param closure_age
+#' maximum life span
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -149,7 +155,7 @@ if (model_type=='S' | model_type=='T'){
 #' @export
 #'
 #' @examples example
-health3_hfl <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_hfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
     if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
@@ -160,7 +166,7 @@ health3_hfl <- function(model_type, init_age, init_state, trans_probs = NULL, si
     stop('invalid state, use 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<0 | init_age>110) {
+  if (init_age<0 | init_age>closure_age) {
     stop('invalid age')
   }
 
@@ -175,19 +181,19 @@ if (model_type=='S' | model_type=='T'){
 
   # generate simulation path, or just take it from input
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age+1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != 111-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -234,7 +240,10 @@ if (model_type=='F'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 0 and 110 denoting age of individual
+#' integer between 0 and closure age denoting age of individual
+#'
+#' @param closure_age
+#' maximum life span
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -265,7 +274,7 @@ if (model_type=='F'){
 #' @export
 #'
 #' @examples example
-health3_dfl <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_dfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
 
     if (model_type != 'S' & model_type!= 'T' & model_type!= 'F') {
@@ -276,7 +285,7 @@ health3_dfl <- function(model_type, init_age, init_state, trans_probs = NULL, si
     stop('invalid state, use 0 for healthy and 1 for disabled')
   }
 
-  if (init_age<0 | init_age>110) {
+  if (init_age<0 | init_age>closure_age) {
     stop('invalid age')
   }
 
@@ -291,19 +300,19 @@ if (model_type=='S' | model_type=='T'){
 
   # simulate path and count disabled time
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != 111-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -352,7 +361,10 @@ if (model_type=='F'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 0 and 110 denoting initial age of individual
+#' integer between 0 and closure age denoting initial age of individual
+#'
+#' @param closure_age
+#' maximum life span
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -383,9 +395,9 @@ if (model_type=='F'){
 #' @export
 #'
 #' @examples example
-health3_time_to_disabled <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_time_to_disabled <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
   # screening for errors
-  if (init_age<0 | init_age>110) {
+  if (init_age<0 | init_age>closure_age) {
     stop('invalid age')
   }
 
@@ -405,19 +417,19 @@ if (model_type=='S' | model_type=='T'){
 
   # simulate path or just use path given
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != 111-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
@@ -463,7 +475,10 @@ if (model_type=='F'){
 #' S for static model, T for trend model, F for frailty model
 #'
 #' @param init_age
-#' integer between 0 and 110 denoting initial age of individual
+#' integer between 0 and closure age denoting initial age of individual
+#'
+#' @param closure_age
+#' maximum life span
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -492,7 +507,7 @@ if (model_type=='F'){
 #' @noRd
 #'
 #' @examples example
-health3_survival_stats <- function(model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
+health3_survival_stats <- function(model_type, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000) {
 
 if (model_type=='S' | model_type=='T'){
 
@@ -501,7 +516,7 @@ if (model_type=='S' | model_type=='T'){
         stop('invalid state, use 0 for healthy and 1 for disabled')
     }
 
-    if (init_age<0 | init_age>110) {
+    if (init_age<0 | init_age>closure_age) {
         stop('invalid age')
     }
 
@@ -515,24 +530,24 @@ if (model_type=='S' | model_type=='T'){
 
   # simulate path or just use path given
   if (!is.null(simulated_path) & !is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else if (is.null(trans_probs)) {
-    if (ncol(simulated_path) != 111-init_age +1) {
+    if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
       stop('initial age does not correspond with size of simulated path')
     }
 
     SP <- simulated_path
   } else {
-    if (length(trans_probs) != 111-init_age) {
+    if (length(trans_probs) != (closure_age+1-init_age)) {
       stop('initial age does not correspond with number of transition probability matrices')
     }
 
     # simulate path
-    SP <- health3_simulate_paths(trans_probs, init_age, init_state, 10000)
+    SP <- health3_simulate_paths(trans_probs, init_age, closure_age, init_state, 10000)
   }
 
   # empty vectors to hold row datas
@@ -585,8 +600,8 @@ if (model_type=='F'){
     first_disabled <- rep(0, n*10000)
 
     for (x in 1:n) {
-        TP <- health3_get_trans_probs('F', param_file, init_age, female, year)
-        SP <- health3_simulate_paths(TP, init_age, init_state, cohort=10000)
+        TP <- health3_get_trans_probs('F', param_file, init_age, closure_age, female, year)
+        SP <- health3_simulate_paths(TP, init_age, closure_age, init_state, cohort=10000)
 
         for (i in 1:nrow(SP)) {
             row_val <- SP[i,]

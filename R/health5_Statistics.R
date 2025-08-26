@@ -14,6 +14,9 @@
 #' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
+#' @param closure_age
+#' maximum life span
+#'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
 #'
@@ -48,7 +51,7 @@
 #' @export
 #'
 #' @examples first_time_leave_H=health5_first_time_stats(health5_simulated_path_example, 0)
-health5_first_time_stats=function(model_type, state, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
+health5_first_time_stats=function(model_type, state, init_age, closure_age , init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
 
 if (model_type=='S' | model_type=='T'){
     ##
@@ -56,22 +59,22 @@ if (model_type=='S' | model_type=='T'){
         stop('no transition probability matrices or simulated paths were provided')
     }
     if (!is.null(simulated_path) & !is.null(trans_probs)) {
-        if (ncol(simulated_path) != 111-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
         # simulate path
         simulated_path <- simulated_path
     } else if (is.null(trans_probs)) {
-        if (ncol(simulated_path) != 111-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
 
         simulated_path <- simulated_path
     } else {
-        if (length(trans_probs) != 111-init_age) {
+        if (length(trans_probs) != (closure_age+1-init_age)) {
             stop('initial age does not correspond with number of transition probability matrices')
         }
-        simulated_path <- simulate_health_state_paths(trans_probs, init_age, init_state, cohort = 10000)
+        simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)
     }
     ##
     first_time=matrix(nrow=nrow(simulated_path),ncol=1)
@@ -106,8 +109,8 @@ if (model_type=='F'){
     first_time=matrix(nrow=n*10000,ncol=1)
     for (x in 1:n) {
         # simulate new frailty path for each iteration
-        trans_probs <- get_trans_probs(n_states=5, model_type, param_file, init_age, female, year, wave_index, latent)
-        simulated_path <- simulate_health_state_paths(trans_probs, init_age, init_state, cohort = 10000)
+        trans_probs <- get_trans_probs(n_states=5, model_type, param_file, init_age, closure_age, female, year, wave_index, latent)
+        simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)
         for (i in 1:nrow(simulated_path)) {
             ##
             if (state==0){
@@ -149,6 +152,9 @@ return(first_time)
 #' integer between 0 and 110 denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
 #'
+#' @param closure_age
+#' maximum life span
+#'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
 #'
@@ -183,28 +189,28 @@ return(first_time)
 #' @export
 #'
 #' @examples total_time_alive=health5_total_time_stats(health5_simulated_path_example, 4)
-health5_total_time_stats=function(model_type, state, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
+health5_total_time_stats=function(model_type, state, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
 if (model_type=='S' | model_type=='T'){
     ##
     if (is.null(trans_probs) & is.null(simulated_path)) {
         stop('no transition probability matrices or simulated paths were provided')
     }
     if (!is.null(simulated_path) & !is.null(trans_probs)) {
-        if (ncol(simulated_path) != 111-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
         # simulate path
         simulated_path <- simulated_path
     } else if (is.null(trans_probs)) {
-        if (ncol(simulated_path) != 111-init_age +1) {
+        if (ncol(simulated_path) != (closure_age+1-init_age +1)) {
             stop('initial age does not correspond with size of simulated path')
         }
         simulated_path <- simulated_path
     } else {
-        if (length(trans_probs) != 111-init_age) {
+        if (length(trans_probs) != (closure_age+1-init_age)) {
             stop('initial age does not correspond with number of transition probability matrices')
         }
-        simulated_path <- simulate_health_state_paths(trans_probs, init_age, init_state, cohort = 10000)
+        simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)
     }
     ##
     total_time=matrix(nrow=nrow(simulated_path),ncol=1)
@@ -267,8 +273,8 @@ if (model_type=='S' | model_type=='T'){
         total_time=matrix(nrow=n*10000,ncol=1)
         for (x in 1:n) {
             # simulate new frailty path for each iteration
-            trans_probs <- get_trans_probs(n_states=5, model_type, param_file, init_age, female, year, wave_index, latent)
-            simulated_path <- simulate_health_state_paths(trans_probs, init_age, init_state, cohort = 10000)
+            trans_probs <- get_trans_probs(n_states=5, model_type, param_file, init_age, closure_age, female, year, wave_index, latent)
+            simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)
             for (i in 1:nrow(simulated_path)) {
                 ##
                 if (state==0){
@@ -354,8 +360,11 @@ health5_stats_produce=function(input){
 #' -1 for first time entering the dead state
 #'
 #' @param init_age
-#' integer between 0 and 110 denoting initial age of individual. This needs to be same
+#' integer between 0 and closure_age denoting initial age of individual. This needs to be same
 #' initial age used in generation of `trans_probs` or `simulated_path`
+#'
+#' @param closure_age
+#' maximum life span
 #'
 #' @param init_state
 #' 0 for healthy, 1 for disabled
@@ -391,43 +400,43 @@ health5_stats_produce=function(input){
 #' @noRd
 #'
 #' @examples example
-health5_stats <- function (model_type, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000) {
+health5_stats <- function (model_type, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000) {
 if (model_type=='S' | model_type=='T'){
         ##
     if (is.null(trans_probs) & is.null(simulated_path)) {
         stop('no transition probability matrices or simulated paths were provided')
     }
     if (!is.null(simulated_path) & !is.null(trans_probs)) {
-        if (ncol(simulated_path) != 111-init_age +1) {
+        if (ncol(simulated_path) != closure_age+1-init_age +1) {
             stop('initial age does not correspond with size of simulated path')
         }
         # simulate path
         simulated_path <- simulated_path
     } else if (is.null(trans_probs)) {
-        if (ncol(simulated_path) != 111-init_age +1) {
+        if (ncol(simulated_path) != closure_age+1-init_age +1) {
             stop('initial age does not correspond with size of simulated path')
         }
         simulated_path <- simulated_path
     } else {
-        if (length(trans_probs) != 111-init_age) {
+        if (length(trans_probs) != closure_age+1-init_age) {
             stop('initial age does not correspond with number of transition probability matrices')
         }
-        simulated_path <- simulate_health_state_paths(trans_probs, init_age, init_state, cohort = 10000)
+        simulated_path <- simulate_health_state_paths(trans_probs, init_age, closure_age, init_state, cohort = 10000)
     }
         ##
 
 if (init_state == 0) {
-    total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs, simulated_path)
-    years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs, simulated_path)
-    years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
-    years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs, simulated_path)
-    years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
     years_disability=years_D+years_MD
     years_illness=years_M+years_MD
-    first_H=health5_first_time_stats(model_type, state=0, init_age, init_state, trans_probs, simulated_path)
-    first_M=health5_first_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
-    first_D=health5_first_time_stats(model_type, state=2, init_age, init_state, trans_probs, simulated_path)
-    first_MD=health5_first_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    first_H=health5_first_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs, simulated_path)
+    first_M=health5_first_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
+    first_D=health5_first_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs, simulated_path)
+    first_MD=health5_first_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
 
     means <- c(mean(total_life), mean(years_H), mean(years_M),
                mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_H, na.rm = TRUE),mean(first_M, na.rm = TRUE),mean(first_D, na.rm = TRUE),mean(first_MD, na.rm = TRUE))
@@ -445,14 +454,14 @@ if (init_state == 0) {
 }
 ##
 if (init_state == 1) {
-    total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs, simulated_path)
-    years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs, simulated_path)
-    years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
-    years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs, simulated_path)
-    years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
     years_disability=years_D+years_MD
     years_illness=years_M+years_MD
-    first_MD=health5_first_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    first_MD=health5_first_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
 
     means <- c(mean(total_life), mean(years_H), mean(years_M),
                mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_MD, na.rm = TRUE))
@@ -469,15 +478,15 @@ if (init_state == 1) {
 }
 ##
 if (init_state == 2) {
-    total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs, simulated_path)
-    years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs, simulated_path)
-    years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
-    years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs, simulated_path)
-    years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
     years_disability=years_D+years_MD
     years_illness=years_M+years_MD
-    first_M=health5_first_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
-    first_MD=health5_first_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    first_M=health5_first_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
+    first_MD=health5_first_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
 
     means <- c(mean(total_life), mean(years_H), mean(years_M),
                mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_M, na.rm = TRUE),mean(first_MD, na.rm = TRUE))
@@ -495,14 +504,14 @@ if (init_state == 2) {
 }
 ##
 if (init_state == 3) {
-    total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs, simulated_path)
-    years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs, simulated_path)
-    years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
-    years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs, simulated_path)
-    years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs, simulated_path)
+    total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs, simulated_path)
+    years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs, simulated_path)
     years_disability=years_D+years_MD
     years_illness=years_M+years_MD
-    first_M=health5_first_time_stats(model_type, state=1, init_age, init_state, trans_probs, simulated_path)
+    first_M=health5_first_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs, simulated_path)
 
     means <- c(mean(total_life), mean(years_H), mean(years_M),
                mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_M, na.rm = TRUE))
@@ -520,17 +529,17 @@ if (init_state == 3) {
 }
 if (model_type=='F'){
     if (init_state == 0) {
-        total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
         years_disability=years_D+years_MD
         years_illness=years_M+years_MD
-        first_H=health5_first_time_stats(model_type, state=0, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        first_M=health5_first_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        first_D=health5_first_time_stats(model_type, state=2, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        first_MD=health5_first_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_H=health5_first_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_M=health5_first_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_D=health5_first_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_MD=health5_first_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
 
         means <- c(mean(total_life), mean(years_H), mean(years_M),
                    mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_H, na.rm = TRUE),mean(first_M, na.rm = TRUE),mean(first_D, na.rm = TRUE),mean(first_MD, na.rm = TRUE))
@@ -548,14 +557,14 @@ if (model_type=='F'){
     }
     ##
     if (init_state == 1) {
-        total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
         years_disability=years_D+years_MD
         years_illness=years_M+years_MD
-        first_MD=health5_first_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_MD=health5_first_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
 
         means <- c(mean(total_life), mean(years_H), mean(years_M),
                    mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_MD, na.rm = TRUE))
@@ -572,15 +581,15 @@ if (model_type=='F'){
     }
     ##
     if (init_state == 2) {
-        total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
         years_disability=years_D+years_MD
         years_illness=years_M+years_MD
-        first_M=health5_first_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        first_MD=health5_first_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_M=health5_first_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_MD=health5_first_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
 
         means <- c(mean(total_life), mean(years_H), mean(years_M),
                    mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_M, na.rm = TRUE),mean(first_MD, na.rm = TRUE))
@@ -598,14 +607,14 @@ if (model_type=='F'){
     }
     ##
     if (init_state == 3) {
-        total_life=health5_total_time_stats(model_type, state=4, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_H=health5_total_time_stats(model_type, state=0, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_M=health5_total_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_D=health5_total_time_stats(model_type, state=2, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
-        years_MD=health5_total_time_stats(model_type, state=3, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        total_life=health5_total_time_stats(model_type, state=4, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_H=health5_total_time_stats(model_type, state=0, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_M=health5_total_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_D=health5_total_time_stats(model_type, state=2, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        years_MD=health5_total_time_stats(model_type, state=3, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
         years_disability=years_D+years_MD
         years_illness=years_M+years_MD
-        first_M=health5_first_time_stats(model_type, state=1, init_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
+        first_M=health5_first_time_stats(model_type, state=1, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female, year, wave_index, latent, param_file, n)
 
         means <- c(mean(total_life), mean(years_H), mean(years_M),
                    mean(years_D),mean(years_MD),mean(years_disability),mean(years_illness),mean(first_M, na.rm = TRUE))

@@ -101,7 +101,7 @@ health5_get_trans_probs_at_age=function(model_type,param_file,age,female,wave_in
 
 
 #' the function to get a full list of transition probability matrices from the
-#' initial age to age 110
+#' initial age to closure age
 #'
 #' @param model_type
 #' S for static model, T for trend model, F for frailty model
@@ -110,6 +110,8 @@ health5_get_trans_probs_at_age=function(model_type,param_file,age,female,wave_in
 #' use US_HRS_5 for 5 state model.
 #' @param init_age
 #' the initial age of the transition probability matrices
+#' @param closure_age
+#' maximum life span
 #' @param female
 #' female 1 if female, 0 if male
 #' @param wave_index
@@ -124,19 +126,19 @@ health5_get_trans_probs_at_age=function(model_type,param_file,age,female,wave_in
 #' @noRd
 #'
 #' @examples example
-health5_get_trans_probs=function(model_type, param_file, init_age, female, wave_index, latent){
+health5_get_trans_probs=function(model_type, param_file, init_age, closure_age, female, wave_index, latent){
     # list of 46 vectors of transition rates for this simulation
     trans_rate=list()
     # list of 46 matrices of transition probabilities for this simulation
     trans_prob_matrix=list()
     #list of
-    state_status=matrix(nrow = 110-init_age+2, ncol = 5)
+    state_status=matrix(nrow = (closure_age-init_age+2), ncol = 5)
     state_status[1,]=c(1,0,0,0,0) # initial state status is 1 in the healthy state and 0 for the others
-    #  for (age in 65:110){
+    #  for (age in 65:closure_age){
     #    state_status[[age-63]]=cbind(c(0,0,0,0,0)) # construct the list to be filled later
     #  }
 
-    for (a in init_age:110){
+    for (a in init_age:closure_age){
         # calculate transition probability matrix for each age
         trans_prob_matrix[[a-init_age+1]]=health5_get_trans_probs_at_age(model_type,param_file,a,female,wave_index+(a-init_age)/2,latent)
         if (model_type=='F'){
