@@ -4,7 +4,7 @@ setwd("C:/Users/yuxin/OneDrive/Documents/GitHub/rit")
 library(devtools)
 load_all(export_all=FALSE)
 
-param_file_3=US_HRS
+param_file_3=US_HRS_3
 param_file_5=US_HRS_5
 
 model_type='F'

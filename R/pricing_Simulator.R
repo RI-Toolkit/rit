@@ -209,7 +209,7 @@ get_econ_simulation <- function(state, n, seed) {
 get_state_simulation <- function(policy, age, female, seed, n) {
     if (policy$name[1] == "CA") {
         if (nrow(policy) == 2) {
-            probs <- get_trans_probs(3, 'S', rit::US_HRS, init_age=age, closure_age = 110, female = 1)
+            probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age=age, closure_age = 110, female = 1)
         } else if (nrow(policy) == 4) {
             probs <- get_trans_probs(5, 'S', rit::US_HRS_5, init_age=age, closure_age = 110, female = 1)
         } else {
@@ -217,7 +217,7 @@ get_state_simulation <- function(policy, age, female, seed, n) {
         }
         return(simulate_health_state_paths(probs, init_age=age, closure_age = 110, cohort = n))
     } else if (policy$name[1] == "RM") {
-        probs <- get_trans_probs(3, 'S', rit::US_HRS, init_age=age, closure_age = 110, female == 1)
+        probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age=age, closure_age = 110, female == 1)
         return(simulate_health_state_paths(probs, init_age=age, closure_age = 110, cohort = n))
     } else {
         return(get_aggregate_mortality(age, female, seed, n))
@@ -231,12 +231,12 @@ get_state_simulation <- function(policy, age, female, seed, n) {
 # ---- Health State Module
 
 get_health_state_3 <- function(age = 65, female = 1, seed = 0, n = 1000) {
-    trans_probs <-  get_trans_probs(3, 'T', rit::US_HRS, age, closure_age = 110, (female = 1), year = 2022)
+    trans_probs <-  get_trans_probs(3, 'T', rit::US_HRS_3, age, closure_age = 110, (female = 1), year = 2022)
     return(simulate_health_state_paths(trans_probs, age, 0, closure_age = 110, n))
 }
 
 get_health_state_5 <- function(age = 65, female = 1, seed = 0, n = 1000) {
-    trans_probs <-  get_trans_probs(5, 'T', rit::US_HRS_5, age, closure_age = 110, (female = 1), year = 2012, wave_index = 8, latent = 0)
+    trans_probs <-  get_trans_probs(5, 'T', rit::US_HRS_5, age, closure_age = 110, (female = 1), year = 2022, latent = 0)
     return(simulate_health_state_paths(trans_probs, age, 0, closure_age = 110, n))
 }
 

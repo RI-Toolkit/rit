@@ -1,0 +1,12 @@
+"stats" "mean" "s.dev"
+"1" "Mean years of life" 8.10630000000001 5.27392469970655
+"2" "Mean years in state H" 4.3986 3.60635808286735
+"3" "Mean years in state M" 2.7511 4.09106617793537
+"4" "Mean years in state D" 0.3376 1.15393214529266
+"5" "Mean years in state MD" 0.619 1.51005530584244
+"6" "Mean years with disability" 0.9566 1.84159050430839
+"7" "Mean years with illness" 3.3701 4.47282087755183
+"8" "First time leaving state H" 4.3481 3.58768916453946
+"9" "First time entering state M" 4.24190262782644 3.44611537998884
+"10" "First time entering state D" 4.30968280467446 3.58156046129333
+"11" "First time entering state MD" 7.63857845328565 4.78205877959518

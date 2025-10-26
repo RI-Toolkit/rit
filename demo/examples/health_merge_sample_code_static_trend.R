@@ -17,8 +17,8 @@ female=0
 latent=0 # initial value of latent factor
 init_state = 0
 
-trans_probs_3state=get_trans_probs(n_states=3, model_type, param_file=param_file_3, init_age, closure_age = 110, female, year = 2012, latent = 0)
-trans_probs_5state=get_trans_probs(n_states=5, model_type, param_file=param_file_5, init_age, closure_age = 110, female, year = 2012, latent = 0)
+trans_probs_3state=get_trans_probs(n_states=3, model_type, param_file=param_file_3, init_age, closure_age = 110, female, year = 2018, latent = 0)
+trans_probs_5state=get_trans_probs(n_states=5, model_type, param_file=param_file_5, init_age, closure_age = 110, female, year = 2018, latent = 0)
 
 l3=create_life_table(trans_probs_3state, init_age, init_state = 0, cohort = 100000)
 l5=create_life_table(trans_probs_5state, init_age, init_state = 0, cohort = 100000)
