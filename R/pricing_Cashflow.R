@@ -17,8 +17,8 @@
 cf_account_based_pension <- function(policy, state, data) {
 
     # Extract relevant policy variables
-    balance <- policy$bal
-    expense <- policy$exp
+    balance <- policy$bal[1]
+    rate <- policy$rate
 
     # Initialize output vector
     cf <- rep(0, times = length(state))
@@ -26,29 +26,19 @@ cf_account_based_pension <- function(policy, state, data) {
     i <- 1
     while (state[i] != -1 & i < length(state)) {    # while PH is not dead
 
-        # Withdraw yearly expense from account
-        balance <- balance - expense
-
-        # Reduce withdrawl amount + exit loop if fund value is negative
-        if (balance < 0) {
-            cf[i] <- expense + balance
-            break
-        }
+        balance <- balance * (1 + data$stock[i])
 
         # Record cashflow to output vector
-        cf[i] <- expense
+        cf[i] <- balance * rate[i]
 
         # Update balance and yearly expense
-        balance <- balance * (1 + data$stock[i])
-        expense <- expense * (1 + data$infla[i])
+        balance <- balance - cf[i]
 
         i <- i + 1
     }
 
     # Withdraw balance after death (payout to family)
-    if (i < length(state) & balance > 0) {
-        cf[i] <- balance
-    }
+    cf[i] <- balance
 
     return(cf)
 }
@@ -93,7 +83,7 @@ cf_care_annuity <- function(policy, state, data) {
     cf <- rep(0, times = length(state))
 
     i <- 1
-    while (state[i] != -1 & i < length(state)) {     # while PH is not dead
+    while (state[i] != -1 & i < length(state)) {# while PH is not dead
 
         # For flat-rate increases of benefits
         benefit <- benefit * (1 + increase)
@@ -108,12 +98,14 @@ cf_care_annuity <- function(policy, state, data) {
         i <- i + 1
     }
 
+    # i is the death time index
     # Account for any cashflows associated with minimum guarantees
-    while (i <= max(minimum)) {
+    # following death of PH
+    while (i <= minimum[1]) {
 
         # Create mask for all policies with min guarantees for current period
-        mask <- ifelse((minimum - i + 1) > 0, as.logical(minimum), 0)
-        cf[i] <- sum(mask * benefit)
+        # mask <- ifelse(i <= minimum, 1, 0)
+        cf[i] <- benefit[1]
 
         # For flat-rate increases of benefits
         benefit <- benefit * (1 + increase)

@@ -22,7 +22,7 @@
 #'
 #' @export
 #'
-sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age = 130, n_sim = 10000, seed = NULL) {
+sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age = 110, n_sim = 10000, seed = NULL) {
 
 # Flagging errors ---------------------------------------------------------
 

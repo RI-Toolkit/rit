@@ -9,6 +9,8 @@
 #' @param policy
 #' Policy type to simulate:
 #' `policy object created using a create_policy function
+#' @param init_age
+#' Initial age of the policyholder in years
 #' @param seed
 #' Seed for random generator
 #' @param n
@@ -25,7 +27,7 @@
 #' @examples
 #' ap <- create_policy_AP(400000, 60000)
 #' cf <- simulate_cf(policy = ap, n = 1000)
-simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
+simulate_cf <- function(policy, init_age = 65, seed = 0, n = 100, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
 
     # Set cash flow function based on input policy
     cf_func <- switch(policy$name[1], "AP" = cf_account_based_pension,
@@ -37,7 +39,7 @@ simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL
 
     # If not provided, get states for each path (matrix)
     if (is.null(state)) {
-        state <- get_state_simulation(policy, age = 65, female = 1, seed, n)
+        state <- get_state_simulation(policy, age = init_age, female = 1, seed, n)
     }
 
     # Validate formatting of mortality state data
@@ -66,7 +68,7 @@ simulate_cf <- function(policy, seed = 0, n = 100, state = NULL, econ_var = NULL
     }
 
     # Get matrix of economic variables for each path
-    data <- get_policy_scenario(policy, age = 65, female = 1, seed, n, period, econ_var, cohort_death_probs)
+    data <- get_policy_scenario(policy, age = init_age, female = 1, seed, n, period, econ_var, cohort_death_probs)
 
     # Initialize output matrix
     cf <- matrix(nrow = n, ncol = ncol(state))
@@ -209,16 +211,16 @@ get_econ_simulation <- function(state, n, seed) {
 get_state_simulation <- function(policy, age, female, seed, n) {
     if (policy$name[1] == "CA") {
         if (nrow(policy) == 2) {
-            probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age=age, closure_age = 110, female = 1)
+            probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age = age, closure_age = 110, female = 1)
         } else if (nrow(policy) == 4) {
-            probs <- get_trans_probs(5, 'S', rit::US_HRS_5, init_age=age, closure_age = 110, female = 1)
+            probs <- get_trans_probs(5, 'S', rit::US_HRS_5, init_age = age, closure_age = 110, female = 1)
         } else {
             stop("Error: CA policy object needs to have 2 or 4 rows")
         }
-        return(simulate_health_state_paths(probs, init_age=age, closure_age = 110, cohort = n))
+        return(simulate_health_state_paths(probs, init_age = age, closure_age = 110, cohort = n))
     } else if (policy$name[1] == "RM") {
-        probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age=age, closure_age = 110, female == 1)
-        return(simulate_health_state_paths(probs, init_age=age, closure_age = 110, cohort = n))
+        probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age = age, closure_age = 110, female == 1)
+        return(simulate_health_state_paths(probs, init_age = age, closure_age = 110, cohort = n))
     } else {
         return(get_aggregate_mortality(age, female, seed, n))
     }
@@ -227,32 +229,35 @@ get_state_simulation <- function(policy, age, female, seed, n) {
 ###############################################################################
 ###### PLACEHOLDER FUNCTIONS
 
+
 # ------------------------------------------------------------------------
 # ---- Health State Module
 
-get_health_state_3 <- function(age = 65, female = 1, seed = 0, n = 1000) {
-    trans_probs <-  get_trans_probs(3, 'T', rit::US_HRS_3, age, closure_age = 110, (female = 1), year = 2022)
-    return(simulate_health_state_paths(trans_probs, age, 0, closure_age = 110, n))
-}
-
-get_health_state_5 <- function(age = 65, female = 1, seed = 0, n = 1000) {
-    trans_probs <-  get_trans_probs(5, 'T', rit::US_HRS_5, age, closure_age = 110, (female = 1), year = 2022, latent = 0)
-    return(simulate_health_state_paths(trans_probs, age, 0, closure_age = 110, n))
-}
+# get_health_state_3 <- function(age, female = 1, seed = 0, n = 1000) {
+#     trans_probs <-  get_trans_probs(3, 'T', rit::US_HRS_3, age, closure_age = 110, (female = 1), year = 2022)
+#     return(simulate_health_state_paths(trans_probs, age, 0, closure_age = 110, n))
+# }
+#
+# get_health_state_5 <- function(age, female = 1, seed = 0, n = 1000) {
+#     trans_probs <-  get_trans_probs(5, 'T', rit::US_HRS_5, age, closure_age = 110, (female = 1), year = 2022, latent = 0)
+#     return(simulate_health_state_paths(trans_probs, age, 0, closure_age = 110, n))
+# }
 
 # ------------------------------------------------------------------------
 # ---- Aggregate Mortality Module
 
-get_aggregate_mortality <- function(age = 65, female = 1, seed = 0, n = 1000) {
+
+
+get_aggregate_mortality <- function(age, female = 1, seed = 0, n = 1000) {
     utils::capture.output(suppressWarnings(
-        mortality <- sim_indiv_path(age, female, death_probs = NULL, closure_age = 130, n)
+        mortality <- sim_indiv_path(init_age = age, female, death_probs = NULL, closure_age = 110, n)
     ))
     return(mortality)
 }
 
-get_pool_realised <- function(age = 65, female = 1, seed = 0, n = 1000, cohort = 1000, death_probs = NULL) {
+get_pool_realised <- function(age, female = 1, seed = 0, n = 1000, cohort = 1000, death_probs = NULL) {
 
-    closure_age <- 130
+    closure_age <- 110
     if (!is.null(death_probs)) {
         closure_age <- age + length(death_probs) - 1
     }
@@ -264,9 +269,9 @@ get_pool_realised <- function(age = 65, female = 1, seed = 0, n = 1000, cohort =
     return(pool)
 }
 
-get_pool_expected <- function(age = 65, female = 1, seed = 0, cohort = 1000, death_probs = NULL) {
+get_pool_expected <- function(age, female = 1, seed = 0, cohort = 1000, death_probs = NULL) {
 
-    closure_age <- 130
+    closure_age <- 110
     if (!is.null(death_probs)) {
         closure_age <- age + length(death_probs) - 1
     }

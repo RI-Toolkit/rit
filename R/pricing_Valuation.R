@@ -40,7 +40,7 @@ value_policy <- function(policy, cashflows, seed = 0) {
 
     # Maps 'colname' attribute to formatted title for output text
     attr_mapping <- list(
-        AP          = "Account Based Policy",
+        AP          = "Account-Based Pension",
         CA          = "Care Annuity",
         LA          = "Life Annuity",
         PA          = "Pooled Annuity",
@@ -63,7 +63,9 @@ value_policy <- function(policy, cashflows, seed = 0) {
         prop        = "Prop        ",
         g_fee       = "Guar. Fee   ",
         s_fee       = "Surr. Fee   ",
-        margin      = "Margin      "
+        margin      = "Margin      ",
+        age         = "Age         ",
+        rate        = "Drawdown rate"
     )
 
     # Format introduction for output text
@@ -74,8 +76,11 @@ value_policy <- function(policy, cashflows, seed = 0) {
 
     # Format attribute elements of policy into output text
     for (i in colnames(policy)) {
-        if (i != "name") {
+        if (i != "name" & i != "bal") {
             msg <- c(msg, paste(attr_mapping[[i]], ": ", policy[i], sep = ""))
+        }
+        if (i == "bal") {
+            msg <- c(msg, paste(attr_mapping[[i]], ": ", policy[[i]][1], sep = ""))
         }
     }
 
@@ -148,7 +153,7 @@ get_path_prices <- function(cashflows) {
     }
 
     # Calculate cumulative product of factors
-    cmsdf <- matrixStats::rowCumprods((1/sdf))
+    cmsdf <- matrixStats::rowCumprods(sdf)
 
     # Discount cashflows
     dcf <- cashflows$cf * cmsdf
