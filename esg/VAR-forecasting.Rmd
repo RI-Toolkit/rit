@@ -197,6 +197,26 @@ properties = clean_names(properties)
 properties = properties %>% mutate_if(is.character, as.factor)
 properties$value_at_date = as.Date(properties$value_at_date, format =  "%d/%m/%Y")
 
+# national
+# sydney 
+home_value_national = properties %>%
+    # filter(property_type == "Houses") %>%
+    group_by(value_at_date) %>%
+    summarise(index = mean(hedonic_home_value_index, na.rm = T))
+rental_national = properties %>%
+    # filter(property_type == "Houses") %>%
+    group_by(value_at_date) %>%
+    summarise(yield = mean(hedonic_rental_yields, na.rm = T))
+    # summarise(yield = weighted.mean(hedonic_rental_yields, w = hedonic_home_value_index, na.rm = T))
+
+# match the time window
+home_value_national = home_value_national %>%
+    filter(value_at_date <= end_date & value_at_date >= start_index_date) %>%
+    mutate(Qtr = as.Date(as.yearqtr(value_at_date)))
+rental_national = rental_national %>% 
+    filter(value_at_date <= end_date & value_at_date >= start_pc_date) %>%
+    mutate(Qtr = as.Date(as.yearqtr(value_at_date)))
+
 # comparing Sydney vs NSW 
 ########
 # sydney 
@@ -281,7 +301,7 @@ rental_houses_nsw = ts(rental_houses_nsw$rental_yields_qtr_rate)
 ####################################################################
 # Gross domestic product: Chain volume measures; seasonally adjusted
 # import 
-gdp_old = read_excel("data/GDP-ABS-2021.xls", sheet = "Data1")[-c(1:9), c(1,54)]
+gdp_old = read_excel("data/GDP-ABS.xlsx", sheet = "Data1")[-c(1:9), c(1,54)]
 gdp = read_excel("data/GDP-ABS.xlsx", sheet = "Data1")[-c(1:9), c(1,63)]
 names(gdp) = c("Date", "GDP")
 gdp = gdp %>% mutate_if(is.character, as.numeric)
@@ -422,16 +442,16 @@ forex = read.csv("data/AUD_index.csv")
 forex$Date = as.Date(forex$Date, format = "%d/%m/%Y")
 
 # match the time window 
-forex = forex %>% filter(Date <= end_date & Date >= start_pc_date)
+forex = forex %>% filter(Date <= end_date & Date >= start_index_date)
 
 # match the frequency 
 forex = forex %>% mutate(Qtr = as.yearqtr(Date)) %>% group_by(Qtr) %>% summarise(AUD_qtr_index = mean(AUD_index)) 
-all_data_original$forex = forex$AUD_qtr_index
-# all_data_original$forex = forex$AUD_qtr_index[-1]
+# all_data_original$forex = forex$AUD_qtr_index
+all_data_original$forex = forex$AUD_qtr_index[-1]
 
 # match the unit 
 forex = forex %>% mutate(AUD_qtr_rate = log(AUD_qtr_index) - log(dplyr::lag(AUD_qtr_index, n = 1))) 
-# forex = forex[-1,]
+forex = forex[-1,]
 
 # declare as a ts object 
 forex = ts(forex$AUD_qtr_rate)
