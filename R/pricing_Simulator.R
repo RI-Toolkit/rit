@@ -27,7 +27,7 @@
 #' @examples
 #' ap <- create_policy_AP(400000, 60000)
 #' cf <- simulate_cf(policy = ap, n = 1000)
-simulate_cf <- function(policy, init_age = 65, seed = 0, n = 100, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
+simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 100, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
 
     # Set cash flow function based on input policy
     cf_func <- switch(policy$name[1], "AP" = cf_account_based_pension,
@@ -288,7 +288,7 @@ get_pool_expected <- function(age, female = 1, seed = 0, cohort = 1000, death_pr
 
 get_perc_change <- function(df) {
     result <- df
-    for (i in seq(1, ncol(df) - 1)) {
+    for (i in seq(1, NCOL(df) - 1)) {
         result[,i] <- (df[,i + 1]/df[,i]) - 1
     }
     result[, ncol(df)] <- result[, ncol(df) - 1]
@@ -310,6 +310,6 @@ get_house_return <- function(var_sim) {
 }
 
 get_stock_return <- function(var_sim) {
-    asx <- (unname(var_sim$stock))
+    asx <- (unname(var_sim$ASX))
     return(get_perc_change(asx))
 }

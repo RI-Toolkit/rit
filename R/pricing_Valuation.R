@@ -22,7 +22,7 @@
 #' la <- create_policy_LA(60000, 5, 0, 0.01)
 #' cf_la <- simulate_cf(la)
 #' val_la <- value_policy(la, cf_la)
-value_policy <- function(policy, cashflows, seed = 0) {
+value_policy <- function(policy, cashflows, seed = NULL) {
 
     if (nrow(cashflows$cf) > nrow(cashflows$sdf) || ncol(cashflows$cf) > ncol(cashflows$sdf))
         stop("Invalid Cashflow Object: Inconsistent dimensions")

@@ -326,38 +326,29 @@ cf_variable_annuity <- function(policy, state, data) {
     withdraw_prop <- policy$prop
     g_fee <- policy$g_fee
 
-    #s_fee <- policy$s_fee # not used in static model
-
     # Initialize output vector
     cf <- rep(0, times = length(state))
 
-    # Tracks Total amount that can be withdrawn + Value of portfolio account
-    total_remaining <- value
     max_withdraw <- value * withdraw_prop
+    account_value <- value
 
-    # Start account value at time 1, as no time 0 cashflow
-    account_value <- value * (1 + data$stock[1])
+    i <- 1
+    while (i <= contract_length) {
 
-    i <- 2
-    while (state[i] != -1 & i < length(state) & i <= contract_length) {
-
-        # Compound account value - expenses for withdrawl guarantee
+        # Compound account value - expenses for withdraw guarantee
         account_value <- account_value * (1 + data$stock[i]) * exp(-g_fee)
 
-        # Calculate withdraw limit for current period
-        withdraw_limit <- min(max_withdraw, total_remaining)
-
-        # Receive account balance at maturity, otherwise withdrawn maximum
-        # amount admissible and update values
-        if (i < contract_length) {
-            cf[i] <- withdraw_limit
-            account_value <- max(account_value - withdraw_limit, 0)
-            total_remaining <- max(total_remaining - withdraw_limit, 0)
-        } else {
-            cf[i] <- account_value
+        if(state[i] == -1) {
+            cf[i] = account_value
             break
+        } else {
+            if (i < contract_length) {
+                cf[i] <- max_withdraw
+                account_value <- max(account_value - max_withdraw, 0)
+            } else {
+                cf[i] <- account_value
+            }
         }
-
         i <- i + 1
     }
 
