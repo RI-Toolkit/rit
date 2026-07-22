@@ -747,7 +747,7 @@ n_vars <- length(last_obs)
 
 # Simulation parameters
 n_sims <- 100      # Number of stochastic paths to generate
-horizon <- 10       # Number of quarters to forecast
+horizon <- 20*4       # Number of quarters to forecast
 
 # Initialize a 3D array to store the results
 # Dimensions: [Time (horizon), Variables, Simulation Path]

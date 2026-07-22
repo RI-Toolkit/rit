@@ -9,7 +9,7 @@
 #' Simulations are based on a Vector Autoregression model. This function uses
 #' the package `zoo` to convert the frequnency units. Period-by-period summary statistics can be obtained from \code{esg_summary}.
 #'
-#' @param num_years Number of years to forecast, counting from 2021-01-01.
+#' @param num_years Number of years to forecast, counting from 2026-01-01.
 #' Default is 5 years, recommended period is less than 10 years.
 #' @param num_paths Number of simulation paths. Default is 10 paths.
 #' @param frequency One of "year", "quarter", and "month". Default is "quarter",
@@ -56,9 +56,9 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
     VAR = var_model()
     {
         intercept = VAR$intercept
-        coef = VAR$coef
-        covres = VAR$covres
-        init_stat_2025q4 = VAR$init_stat_2025q4
+        coef = as.matrix(VAR$coef)
+        covres = as.matrix(VAR$covres)
+        init_stat_2025q4 = as.numeric(VAR$init_stat_2025q4)
         init_orig = VAR$init_orig
         mortgage_rate = VAR$mortgage_rate
         unemployment_rate = VAR$unemployment_rate
@@ -117,14 +117,13 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
 
         # simulate for num_pred steps
         new_init = init_stat_2025q4 # z_{t-1}
-        # old_init = init_stat_2020q4 # z_{t-2}
+
 
         for (i in 1:num_pred) {
 
             e = as.vector(noise[[noise_index]][,i])
-            zt = intercept + as.vector(coef %*% new_init) + as.matrix(chol(covres)) %*% e
+            zt = intercept + as.vector(coef %*% new_init) + as.matrix(t(chol(covres))) %*% e
             path[i,] = zt
-            # old_init = new_init # z_{t-2} <- z_{t-1}
             new_init = zt # z_{t-1} <- z_t
 
         }
@@ -176,10 +175,10 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
     sim[[2]] = rbind(init_orig[2], as.data.frame(sim[[2]])) # zcp10y_spread
     sim[[3]] = apply(sim[[3]], 2, function (x) {index2grow_inv(x, init_orig[3])}) # home_index
     # sim[[4]] = rbind(init_orig[4], as.data.frame(sim[[4]])) # rental
-    sim[[4]] = apply(sim[[4]], 2, function (x) {index2grow_inv(x, init_orig[5])}) # GDP
-    sim[[5]] = apply(sim[[5]], 2, function (x) {index2grow_inv(x, init_orig[6])}) # CPI
-    sim[[6]] = apply(sim[[6]], 2, function (x) {index2grow_inv(x, init_orig[7])}) # ASX200
-    sim[[7]] = apply(sim[[7]], 2, function (x) {index2grow_inv(x, init_orig[8])}) # AUD
+    sim[[4]] = apply(sim[[4]], 2, function (x) {index2grow_inv(x, init_orig[4])}) # GDP
+    sim[[5]] = apply(sim[[5]], 2, function (x) {index2grow_inv(x, init_orig[5])}) # CPI
+    sim[[6]] = apply(sim[[6]], 2, function (x) {index2grow_inv(x, init_orig[6])}) # ASX200
+    sim[[7]] = apply(sim[[7]], 2, function (x) {index2grow_inv(x, init_orig[7])}) # AUD
     sim[[8]] = sim[[1]] + mortgage_rate # mortage_rate
     sim[[9]] = sim[[2]] + unemployment_rate # unemployment_rate
     sim = lapply(sim, function(x){row.names(x) = time_index; colnames(x) = path_index; return (x)})
@@ -216,7 +215,7 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
                     simplify = TRUE)
         st = rbind(init_st,st)
 
-        st[2,] = ifelse(st[2,] > 1.2,1.2,ifelse(st[2,] < 0.8, 0.8, st[2,])) # trim the irregular values: historical data: interest rate < 0
+        # st[2,] = ifelse(st[2,] > 1.2,1.2,ifelse(st[2,] < 0.8, 0.8, st[2,])) # trim the irregular values: historical data: interest rate < 0
         row.names(st) = as.character(time_index)
         colnames(st) = path_index
 

@@ -267,7 +267,7 @@ par(mfrow = c(2,2))
 
 #######
 # zcp3m
-plot_date = c(as.Date(time_names_past), row.names(sdf$zcp3m_yield)[-1])
+plot_date = c(as.Date(time_names_past)[-1], row.names(sdf$zcp3m_yield)[-1])
 plot_data = c(all_data[1,], sdf$zcp3m_yield[-1,1])
 plot(plot_date, plot_data, "l", main = "zcp3m", col = "grey")
 for (i in 2:num_paths) {
