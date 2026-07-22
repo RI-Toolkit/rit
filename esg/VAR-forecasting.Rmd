@@ -91,27 +91,27 @@ colnames(all_data_original) = c("Date", all_var_names)
 
 ## Data quality
 
--   **Variable selection/transformation.**
+- **Variable selection/transformation.**
 
-    -   `10-year zero-coupon spread` = `10-year zero-coupon yield` - `3-month zero-coupon yield`.
+  - `10-year zero-coupon spread` = `10-year zero-coupon yield` - `3-month zero-coupon yield`.
 
-    -   Negative `3-month zero-coupon yield`.
+  - Negative `3-month zero-coupon yield`.
 
-    -   `Hedonic home value index` and `Hedonic rental yields` are medians of Sydney (SA4 regions) houses (excluding units).
+  - `Hedonic home value index` and `Hedonic rental yields` are medians of Sydney (SA4 regions) houses (excluding units).
 
--   **Time window.** Q1 1993 - Q1 2021 (113 quarters).
+- **Time window.** Q1 1993 - Q1 2021 (113 quarters).
 
--   **Time frequency.** Converted to quarterly frequency by averaging.
+- **Time frequency.** Converted to quarterly frequency by averaging.
 
--   **Units.** Quarterly indexes are converted to quarterly rates.
+- **Units.** Quarterly indexes are converted to quarterly rates.
 
-    -   `Hedonic home value growth rate`$_t$ = log(`Hedonic home value rate`$_t$) - log(`Hedonic home value rate`$_{t-1}$).
+  - `Hedonic home value growth rate`$_t$ = log(`Hedonic home value rate`$_t$) - log(`Hedonic home value rate`$_{t-1}$).
 
-    -   `GDP  growth rate`$_t$ = log(`GDP`$_t$) - log(`GDP`$_{t-1}$).
+  - `GDP  growth rate`$_t$ = log(`GDP`$_t$) - log(`GDP`$_{t-1}$).
 
-    -   `S&P/ASX200 growth rate`$_t$ = log(`S&P/ASX200 price`$_t$) - log(`S&P/ASX200 price`$_{t-1}$).
+  - `S&P/ASX200 growth rate`$_t$ = log(`S&P/ASX200 price`$_t$) - log(`S&P/ASX200 price`$_{t-1}$).
 
-    -   `AUD trade index growth rate`$_t$ = log(`AUD index`$_t$) - log(`AUD index`$_{t-1}$).
+  - `AUD trade index growth rate`$_t$ = log(`AUD index`$_t$) - log(`AUD index`$_{t-1}$).
 
 ```{r, message=FALSE, warning=FALSE}
 start_pc_date = as.Date("1993-04-01")
@@ -530,13 +530,13 @@ legend(2006, 11, legend = c(TeX("r^{(40)} - r^{(1)}"), TeX("UE")), lty = 1:2, bo
 
 ### Correlation
 
--   `Mortgage rate` vs `3-month zero-coupon yield` ($\rho$ = 0.90). Mortgage rate removed.
+- `Mortgage rate` vs `3-month zero-coupon yield` ($\rho$ = 0.90). Mortgage rate removed.
 
--   `10-year zero-coupon spread` vs `NSW unemployment rate` ($\rho$ = 0.75). Unemployment rate removed.
+- `10-year zero-coupon spread` vs `NSW unemployment rate` ($\rho$ = 0.75). Unemployment rate removed.
 
--   `10-year zero-coupon spread` vs `10-year BBB-rated corporate bond spread` ($\rho$ = 0.621). Corporate bond was removed.
+- `10-year zero-coupon spread` vs `10-year BBB-rated corporate bond spread` ($\rho$ = 0.621). Corporate bond was removed.
 
--   `S&P/ASX200 growth` vs `AUD trade index growth` ($\rho$ = 0.42). Both kept.
+- `S&P/ASX200 growth` vs `AUD trade index growth` ($\rho$ = 0.42). Both kept.
 
 ```{r, message=FALSE, warning=FALSE,fig.width = 5, fig.height = 4, fig.align = "center"}
 all_data = cbind(zcp3m, zcp10y_spread, lending, home_value_houses_nsw, rental_houses_nsw, gdp, cpi, asx200, unemploy_nsw, forex)
@@ -550,11 +550,11 @@ corrplot(cor(all_data, method = "pearson"), tl.col = "black", diag = F, type = "
 
 On the 1st and 2nd principal components:
 
--   `GDP`, `S&P/ASX200`, `AUD trade index growth` are similar.
+- `GDP`, `S&P/ASX200`, `AUD trade index growth` are similar.
 
--   `NSW unemployment rate`, `Sydney home value index growth`, `10-year zero-coupon spread` are similar.
+- `NSW unemployment rate`, `Sydney home value index growth`, `10-year zero-coupon spread` are similar.
 
--   6 out of 8 variables explain 90% of variation.
+- 6 out of 8 variables explain 90% of variation.
 
 ```{r, message=FALSE, warning=FALSE, fig.align = "center"}
 set.seed(1)
@@ -573,13 +573,13 @@ all_data = cbind(zcp3m, zcp10y_spread, home_value_houses_nsw, rental_houses_nsw,
 
 ## Statistical tests for stationarity
 
--   Augmented Dickey–Fuller test ($H_0$: unit root present in the series).
+- Augmented Dickey–Fuller test ($H_0$: unit root present in the series).
 
--   Phillips-Perron test ($H_0$: integrated of order 1).
+- Phillips-Perron test ($H_0$: integrated of order 1).
 
--   Significant level is chosen to be 0.05. pvalue = 0.01 means \<= 0.01. No laps at this stage.
+- Significant level is chosen to be 0.05. pvalue = 0.01 means \<= 0.01. No laps at this stage.
 
--   Series to be transformed are: `3-month zero-coupon yield`, `Hedonic rental yields - Sydney houses`.
+- Series to be transformed are: `3-month zero-coupon yield`, `Hedonic rental yields - Sydney houses`.
 
 ```{r, message=FALSE, warning=FALSE, results='hide'}
 ###############
@@ -741,30 +741,30 @@ kbl(stationary_results_lag1) %>% kable_styling(latex_options = c("striped", "sca
 
 Notes on R built-in functions:
 
--   Formulas for the statistics ([link](http://www.phdeconomics.sssup.it/documents/Lesson18.pdf)). Ouput `HQ` is HQC, `SIC` is BIC, `FPE` is final prediction error.
+- Formulas for the statistics ([link](http://www.phdeconomics.sssup.it/documents/Lesson18.pdf)). Ouput `HQ` is HQC, `SIC` is BIC, `FPE` is final prediction error.
 
--   `VARSelect` for every lag up to maximum are based on the same sample size, which is not suitable. We compute the statistics mannually.
+- `VARSelect` for every lag up to maximum are based on the same sample size, which is not suitable. We compute the statistics mannually.
 
--   `AIC()`, `BIC()` do not use the right residual covariance.
+- `AIC()`, `BIC()` do not use the right residual covariance.
 
 Three types of VAR deterministic regressors:
 
--   `none`: optimal lag is 1.
+- `none`: optimal lag is 1.
 
-    \begin{align*}
-      \mathbf{y}_{t} = \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
+  \begin{align*}
+    \mathbf{y}_{t} = \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
 
--   `const`: optimal lag is 1.
+- `const`: optimal lag is 1.
 
 \begin{align*}
     \mathbf{y}_{t} = \boldsymbol{\alpha} + \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
 
--   `trend`: optimal lag is 1.
+- `trend`: optimal lag is 1.
 
 \begin{align*}
     \mathbf{y}_{t} = \boldsymbol{\alpha} + \vect \gamma t + \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
 
--   `both`: `const` and `trend`. optimal lag is 1.
+- `both`: `const` and `trend`. optimal lag is 1.
 
 ```{r}
 all_data_stationary = cbind(zcp3m_stationary, zcp10y_spread, home_value_houses_nsw, rental_houses_nsw_stationary, gdp, cpi, asx200, forex)
@@ -946,13 +946,13 @@ coef_mat = cbind(results[,seq(from = 1, to = 17, by = 2)])
 
 #### Tests
 
--   Portmanteau test ($H_0$: residual autocorrelation = 0).
+- Portmanteau test ($H_0$: residual autocorrelation = 0).
 
--   [Engle's ARCH test](https://au.mathworks.com/help/econ/engles-arch-test.html) ($H_0$: residual autocorrelation = 0).
+- [Engle's ARCH test](https://au.mathworks.com/help/econ/engles-arch-test.html) ($H_0$: residual autocorrelation = 0).
 
--   Jarque-Bera test ($H_0$: skewness and kurtosis match gaussian distribution).
+- Jarque-Bera test ($H_0$: skewness and kurtosis match gaussian distribution).
 
--   The results are not very satisfactory -\> improvements?
+- The results are not very satisfactory -\> improvements?
 
 ```{r}
 # resid_results = data.frame(chisq = rep(NA,4), pvalues = rep(NA,4), conclusion = rep(NA,4), row.names = c("Portmanteau test - white noise residuals", "Engle's ARCH test - white noise residuals", "Jarque-Bera Normality test - Skewness", "Jarque-Bera Normality test - Kurtosis"))
@@ -1023,7 +1023,7 @@ coef_mat = cbind(results[,seq(from = 1, to = 17, by = 2)])
 
 #### Residuals
 
--   Big residuals around GFC.
+- Big residuals around GFC.
 
 ```{r}
 # par(mfrow = c(3,3))
@@ -1177,9 +1177,9 @@ forex_inv = function (x, init) {
 
 #### Plots
 
--   No forecast captures the COVID trends.
+- No forecast captures the COVID trends.
 
--   Wide confidence intervals, smooth predictions.
+- Wide confidence intervals, smooth predictions.
 
 ```{r}
 ##########
@@ -1340,9 +1340,9 @@ lines(all_data_original$Date[-1], plot_data_lower, lty = 2)
 
 #### Metrics
 
--   RMSE on the transformed scale: same unit "rate" and all stationary. `10-year zero-coupon spread` has the highest RMSE of 0.256. Followed by `3-month zero-coupon yield` (0.163).
+- RMSE on the transformed scale: same unit "rate" and all stationary. `10-year zero-coupon spread` has the highest RMSE of 0.256. Followed by `3-month zero-coupon yield` (0.163).
 
--   MAE: `10-year zero-coupon spread` has the highest MAE of 0.256. Followed by `3-month zero-coupon yield` (0.108).
+- MAE: `10-year zero-coupon spread` has the highest MAE of 0.256. Followed by `3-month zero-coupon yield` (0.108).
 
 ```{r}
 RMSE_test = as.data.frame(matrix(NA, nrow = 1, ncol = length(all_var_names)))
@@ -1917,15 +1917,15 @@ plot(ecdf(melt(sim_paths_stationary$forex)$value), verticals = T, do.points=F,co
 
 ## Causality among variables
 
--   [Why important](https://stats.stackexchange.com/questions/438822/how-does-granger-causality-relate-to-vector-autoregression). Granger causality test ($H_0$: no Granger causality). If X Granger-causes Y, X forecasts Y.
+- [Why important](https://stats.stackexchange.com/questions/438822/how-does-granger-causality-relate-to-vector-autoregression). Granger causality test ($H_0$: no Granger causality). If X Granger-causes Y, X forecasts Y.
 
--   Instantaneous causality test ($H_0$: no Granger causality). If X instantaneously Granger-causes Y, future values of X forecast Y. [Relation with Granger causality](https://stats.stackexchange.com/questions/404123/difference-between-granger-causality-and-instantaneous-causality).
+- Instantaneous causality test ($H_0$: no Granger causality). If X instantaneously Granger-causes Y, future values of X forecast Y. [Relation with Granger causality](https://stats.stackexchange.com/questions/404123/difference-between-granger-causality-and-instantaneous-causality).
 
 ### Group test conclusions
 
--   All series instantaneous Granger-cause other: do future values help at all?
+- All series instantaneous Granger-cause other: do future values help at all?
 
--   `3-month zero-coupon yield`, `GDP  growth rate`, `S&P/ASX200 growth rate` also Granger-cause others. Past values of these 3 series improve the prediction of other variables.
+- `3-month zero-coupon yield`, `GDP  growth rate`, `S&P/ASX200 growth rate` also Granger-cause others. Past values of these 3 series improve the prediction of other variables.
 
 ```{r}
 ###########################
@@ -1946,9 +1946,9 @@ kbl(causality_group_results) %>% kable_styling(latex_options = c("striped", "sca
 
 ### 1 vs 1 test
 
--   `3-month zero-coupon yield`, `GDP`, `S&P/ASX200` Granger-cause 2-3 other variables.
+- `3-month zero-coupon yield`, `GDP`, `S&P/ASX200` Granger-cause 2-3 other variables.
 
--   `NSW unemployment rate` is Granger-caused by 5 other variables.
+- `NSW unemployment rate` is Granger-caused by 5 other variables.
 
 ![](granger_causality.PNG) ![](instant_causality.PNG)
 
@@ -2237,20 +2237,20 @@ c(sqrt(rowMeans(RMSE_test^2)), rowMeans(MAE_test))
 
 ## Next steps
 
--   Improve current model?
+- Improve current model?
 
-    -   Cascade structure? see Granger causality tests (ref: Melbourne SUPA methodology)
+  - Cascade structure? see Granger causality tests (ref: Melbourne SUPA methodology)
 
-    -   Justification of the events.
+  - Justification of the events.
 
-    -   Future structural changes: negative interest rates? U/V/L shape recovery?
+  - Future structural changes: negative interest rates? U/V/L shape recovery?
 
--   Prediction function
+- Prediction function
 
-    -   20 years of data -\> at most 5 years of prediction? (but pricing model requires 60 years)
+  - 20 years of data -\> at most 5 years of prediction? (but pricing model requires 60 years)
 
-    -   Write as a function & upload to GitHub. Error edge cases (Rishi).
+  - Write as a function & upload to GitHub. Error edge cases (Rishi).
 
--   Next steps
+- Next steps
 
-    -   Geometric brownian motion. Reading list from Teams/email.
+  - Geometric brownian motion. Reading list from Teams/email.

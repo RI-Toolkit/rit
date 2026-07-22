@@ -1,0 +1,844 @@
+---
+title: "Retirement Income Toolkit - Economic Scenario - VAR"
+author: "Queenie Huang"
+output:
+ bookdown::html_document2:
+    toc: yes
+    toc_depth: '4'
+    number_sections: yes
+    fig_caption: yes
+    code_folding: hide
+urlcolor: blue
+header-includes: |    
+ \usepackage{amsmath,amsthm,amssymb,amsfonts, mathtools, empheq, bbm}
+ \newcommand{\vect}[1]{\boldsymbol{#1}}
+---
+
+```{=html}
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 15px;
+  }
+td {  /* Table  */
+  font-size: 15px;
+}
+h1.title {
+  font-size: 30px;
+}
+h1 { /* Header 1 */
+  font-size: 26px;
+  color: DarkBlue;
+}
+h2 { /* Header 2 */
+    font-size: 22px;
+  color: DarkBlue;
+}
+h3 { /* Header 3 */
+  font-size: 18px;
+  color: DarkBlue;
+}
+code.r{ /* Code block */
+    font-size: 15px;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 15px;
+}
+</style>
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+options(scipen = 1, digits = 6) # use 2 d.p. in output
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(readxl)
+library(janitor)
+library(lubridate)
+library(vars)
+library(tseries)
+library(corrplot)
+library(kableExtra)
+library(reshape2)
+library(latex2exp)
+library(aTSA)
+library(caret)
+library(Metrics)
+```
+
+A VAR(p) process can be represented by \begin{align*}
+    \vect Y_t = \vect \alpha + A_1 \vect Y_{t-1} + \ldots + A_p \vect Y_{t-p} + \vect \epsilon, 
+\end{align*} where $n$ is the number of economic/financial variables, $p$ is the lag, $\vect \epsilon$ is a white noise process, $A_1, \ldots, A_p$ are fixed coefficient matrices.
+
+# Economic/financial variables
+
+```{r, message=FALSE, warning=FALSE}
+# variables = read_excel("data/Variables.xlsx")
+
+all_var_names = c("zcp3m", "zcp10y", "home_index", "GDP", "CPI", "ASX200", "forex") # those to be kept 
+all_data_original = as.data.frame(matrix(NA, nrow = 131, ncol = 1+length(all_var_names)))
+colnames(all_data_original) = c("Date", all_var_names)
+
+
+# kbl(variables) %>% kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+# Assess data quality & cleaning
+
+## Data quality
+
+- **Variable selection/transformation.**
+
+  - `10-year zero-coupon spread` = `10-year zero-coupon yield` - `3-month zero-coupon yield`.
+
+  - Negative `3-month zero-coupon yield`.
+
+  - `Hedonic home value index` and `Hedonic rental yields` are medians of Sydney (SA4 regions) houses (excluding units).
+
+- **Time window.** Q1 1993 - Q4 2025 (131 quarters).
+
+- **Time frequency.** Converted to quarterly frequency by averaging.
+
+- **Units.** Quarterly indexes are converted to quarterly rates.
+
+  - `Hedonic home value growth rate`$_t$ = log(`Hedonic home value rate`$_t$) - log(`Hedonic home value rate`$_{t-1}$).
+
+  - `GDP  growth rate`$_t$ = log(`GDP`$_t$) - log(`GDP`$_{t-1}$).
+
+  - `S&P/ASX200 growth rate`$_t$ = log(`S&P/ASX200 price`$_t$) - log(`S&P/ASX200 price`$_{t-1}$).
+
+  - `AUD trade index growth rate`$_t$ = log(`AUD index`$_t$) - log(`AUD index`$_{t-1}$).
+
+```{r, message=FALSE, warning=FALSE}
+start_pc_date = as.Date("1993-04-01")
+start_index_date = as.Date("1993-1-01") # indexes are converted to percentages, one period short
+end_date = as.Date("2025-12-31")
+
+################################################
+# ZERO-COUPON INTEREST RATES – ANALYTICAL SERIES
+# import - 3 months 
+# zcp_old = read_excel("data/ZCP_till2008.xls")[-c(1:10), c(1,3)]
+# zcp_new = read_excel("data/ZCP_from2008.xls")[-c(1:10), c(1,3)]
+# names(zcp_old) = c("Date", "ZCP3month")
+# names(zcp_new) = c("Date", "ZCP3month")
+# zcp3m = rbind(zcp_old, zcp_new)
+
+zcp3m = read.csv("data/zcb.csv")[,c(1,2)]
+names(zcp3m) = c("Date", "ZCP3month")
+
+# import - 10 years 
+# zcp_old = read_excel("data/ZCP_till2008.xls")[-c(1:10), c(1,42)]
+# zcp_new = read_excel("data/ZCP_from2008.xls")[-c(1:10), c(1,42)]
+# names(zcp_old) = c("Date", "ZCP10year")
+# names(zcp_new) = c("Date", "ZCP10year")
+# zcp10y = rbind(zcp_old, zcp_new)
+# rm(zcp_new, zcp_old)
+
+zcp10y = read.csv("data/zcb.csv")[, c(1,41)]
+names(zcp10y) = c("Date", "ZCP10year")
+
+# cleaning
+# zcp3m = zcp3m %>% mutate_if(is.character, as.numeric)
+# zcp10y = zcp10y %>% mutate_if(is.character, as.numeric)
+# zcp3m$Date = as.Date(zcp3m$Date, origin = "1899-12-30")
+# zcp10y$Date = as.Date(zcp10y$Date, origin = "1899-12-30")
+
+zcp3m$Date = as.Date(zcp3m$Date, format = "%d/%m/%Y")
+zcp10y$Date = as.Date(zcp10y$Date, format = "%d/%m/%Y")
+
+# convert 10 year CZP to spread 
+zcp10y$ZCP10y_spread = zcp10y$ZCP10year - zcp3m$ZCP3month
+
+# match the time window 
+zcp3m = zcp3m %>% filter(Date <= end_date & Date >= start_pc_date)
+zcp10y = zcp10y %>% filter(Date <= end_date & Date >= start_pc_date)
+
+# match the frequency 
+zcp3m = zcp3m %>%
+    mutate(Year = year(Date), Quarter = quarter(Date)) %>%
+    group_by(Year, Quarter) %>%
+    filter(Date == max(Date)) %>%
+    ungroup() %>%
+    mutate(Qtr = as.yearqtr(Date)) %>%
+    dplyr::select(Qtr, ZCP3month) 
+
+zcp10y = zcp10y %>%
+    mutate(Year = year(Date), Quarter = quarter(Date)) %>%
+    group_by(Year, Quarter) %>%
+    filter(Date == max(Date)) %>%
+    ungroup() %>%
+    mutate(Qtr = as.yearqtr(Date)) %>%
+    dplyr::select(Qtr, ZCP10y_spread, ZCP10year) 
+
+all_data_original$Date = zcp10y$Qtr
+all_data_original$zcp3m = zcp3m$ZCP3month
+all_data_original$zcp10y = zcp10y$ZCP10year
+
+# match the unit 
+
+# declare as a ts object 
+zcp3m = ts(zcp3m$ZCP3month)
+#zcp3m = ts(log(zcp3m$ZCP3month_qtr_rate))
+zcp10y_spread = ts(zcp10y$ZCP10y_spread)
+
+###############
+# Mortgage rate
+lending = read_excel("data/Mortgage-RBA.xlsx", sheet = "Data")[-c(1:10), c(1,4)]
+names(lending) = c("Date", "mortgage_rate")
+lending = lending %>% mutate_if(is.character, as.numeric)
+lending$Date = as.Date(lending$Date, origin = "1899-12-30")
+
+# match the time window
+lending = lending %>% filter(Date <= end_date & Date >= start_pc_date)
+
+# match the frequency
+lending = lending %>%
+    mutate(Year = year(Date), Quarter = quarter(Date)) %>%
+    group_by(Year, Quarter) %>%
+    filter(Date == max(Date)) %>%
+    ungroup() %>%
+    mutate(Qtr = as.yearqtr(Date)) %>%
+    dplyr::select(Qtr, mortgage_rate) 
+
+# declare as a ts object
+lending = ts(lending$mortgage_rate)
+
+all_data_original$lending = lending
+
+######################################
+# House price dynamics
+# import & cleaning 
+properties = read.csv("data/home_price.csv")
+properties = clean_names(properties)
+properties = properties %>% mutate(Date = as.Date(date, format = "%d/%m/%Y")) %>% filter(Date <= end_date & Date >= start_index_date) %>% mutate(Qtr = as.yearqtr(Date))
+properties = properties[nrow(properties):1, ]
+all_data_original$home_index = properties$value_at_date[-1]
+
+
+# match the unit 
+home_value_houses_nsw = properties %>% mutate(home_value_qtr_rate = log(value_at_date) - log(dplyr::lag(value_at_date, n = 1))) 
+home_value_houses_nsw = home_value_houses_nsw[-1,]
+
+# declares variables as time_series objects 
+home_value_houses_nsw = ts(home_value_houses_nsw$home_value_qtr_rate)
+
+####################################################################
+# Gross domestic product: Chain volume measures; seasonally adjusted
+# import 
+gdp_old = read_excel("data/GDP-ABS.xlsx", sheet = "Data1")[-c(1:9), c(1,54)]
+gdp = read_excel("data/GDP-ABS.xlsx", sheet = "Data1")[-c(1:9), c(1,63)]
+names(gdp) = c("Date", "GDP")
+gdp = gdp %>% mutate_if(is.character, as.numeric)
+gdp$Date = as.Date(gdp$Date, origin = "1899-12-30")
+
+# match the time window 
+gdp = gdp %>% filter(Date <= end_date & Date >= start_index_date)
+
+# match the frequency 
+gdp = gdp %>% mutate(Qtr = as.yearqtr(Date)) %>% dplyr::select(-Date)
+all_data_original$GDP = gdp$GDP[-1]
+
+# match the unit 
+gdp = gdp %>% mutate(gdp_rates = log(GDP) - log(dplyr::lag(GDP, n = 1))) 
+gdp = gdp[-1,]
+
+# declare as a ts object 
+gdp = ts(gdp$gdp_rates)
+
+#####################################
+# CPI: Australia; seasonally adjusted
+# import 
+cpi = read_excel("data/CPI-ABS.xlsx", sheet = "Data1")[-c(1:9), c(1,10)]
+names(cpi) = c("Date", "CPI")
+cpi = cpi %>% mutate_if(is.character, as.numeric)
+cpi$Date = as.Date(cpi$Date, origin = "1899-12-30")
+
+# match the time window
+cpi = cpi %>% filter(Date <= end_date & Date >= start_index_date)
+
+# match the frequency
+cpi = cpi %>% mutate(Qtr = as.yearqtr(Date)) %>% dplyr::select(-Date)
+all_data_original$CPI = cpi$CPI[-1]
+
+# match the unit
+cpi = cpi %>% mutate(cpi_rate = log(CPI) - log(dplyr::lag(CPI, n = 1)))
+cpi = cpi[-1,]
+
+# declare as a ts object
+cpi = ts(cpi$cpi_rate)
+
+##################################################################
+# Non-financial corporate BBB bonds – yield – 10 year target tenor
+# import 
+# corpBBB_10y_spread = read_excel("data/corporate_bonds-RBA.xls", sheet = "Data")[-c(1:10), c(1,36)]
+# names(corpBBB_10y_spread) = c("Date", "yield")
+# corpBBB_10y_spread = corpBBB_10y_spread %>% mutate_if(is.character, as.numeric)
+# corpBBB_10y_spread$Date = as.Date(corpBBB_10y_spread$Date, origin = "1899-12-30")
+# 
+# # match the time window
+# corpBBB_10y_spread = corpBBB_10y_spread %>% filter(Date <= end_date & Date >= start_pc_date)
+# 
+# # match the frequency
+# corpBBB_10y_spread = corpBBB_10y_spread %>% mutate(Qtr = as.yearqtr(Date)) %>% group_by(Qtr) %>% summarise(yield_qtr = mean(yield))
+# 
+# # match the unit
+# corpBBB_10y_spread$spread_qtr = corpBBB_10y_spread$yield_qtr - zcp3m
+# 
+# # declare as a ts object
+# corpBBB_10y_spread = ts(corpBBB_10y_spread$spread_qtr)
+
+#################################
+# S&P/ASX200: daily closing price
+# import 
+# asx200_new = read_excel("data/ASX200_from2001.xlsx")[, 1:2]
+# asx200_new = clean_names(asx200_new)
+# 
+# asx200_oldest = read_excel("data/ASX200_till2001Q2.xlsx")[,c(1,6)]
+# names(asx200_oldest) = c("exchange_date", "close")
+# asx200_oldest = asx200_oldest %>% mutate_if(is.character, as.numeric)
+# asx200_oldest$exchange_date = as.Date(asx200_oldest$exchange_date, origin = "1899-12-30")
+# asx200_oldest = asx200_oldest[order(asx200_oldest$exchange_date),]
+# 
+# asx200_old = read_excel("data/ASX200_till2001Nov19.xlsx")[,c(1,6)]
+# names(asx200_old) = c("exchange_date", "close")
+# asx200_old = asx200_old %>% mutate_if(is.character, as.numeric)
+# asx200_old$exchange_date = as.Date(asx200_old$exchange_date, origin = "1899-12-30")
+# asx200_old = asx200_old[order(asx200_old$exchange_date),]
+
+# asx200 = rbind(asx200_oldest, asx200_old, asx200_new)
+
+asx200 = read.csv("data/asx200_price.csv")[, 1:2]
+names(asx200) = c("exchange_date", "close")
+
+# match the time window 
+asx200 = asx200 %>% filter(exchange_date <= end_date & exchange_date >= start_index_date)
+asx200$exchange_date = as.Date(asx200$exchange_date)
+
+# match the frequency 
+asx200 = asx200 %>%
+    mutate(Year = year(exchange_date), Quarter = quarter(exchange_date)) %>%
+    group_by(Year, Quarter) %>%
+    filter(exchange_date == max(exchange_date)) %>%
+    ungroup() %>%
+    mutate(Qtr = as.yearqtr(exchange_date)) %>%
+    dplyr::select(Qtr, close) 
+all_data_original$ASX200 = asx200$close[-1]
+
+# match the unit 
+asx200 = asx200 %>% mutate(close_qtr_rate = log(close) - log(dplyr::lag(close, n = 1))) 
+asx200 = asx200[-1,]
+
+# declare as a ts object 
+asx200 = ts(asx200$close_qtr_rate)
+
+############################################
+# fixed margin
+# unemployment rate NSW; seasonally adjusted
+# import
+# unemploy_nsw = read_excel("data/Unemployment_rate.xls", sheet = "Data1")[-c(1:9), c(1, 48)]
+
+unemploy_nsw = read.csv("data/Unemployment_rate.csv")
+names(unemploy_nsw) = c("Date", "Unemployment_rate")
+# unemploy_nsw = unemploy_nsw %>% mutate_if(is.character, as.numeric)
+# unemploy_nsw$Date = as.Date(unemploy_nsw$Date, origin = "1899-12-30")
+# unemploy_nsw$Date = as.Date(paste0("01-", unemploy_nsw$Date), format = "%d-%b-%Y")
+
+unemploy_nsw$Date = as.Date(unemploy_nsw$Date, format = "%d/%m/%Y")
+
+# match the time window
+unemploy_nsw = unemploy_nsw %>% filter(Date <= end_date & Date >= start_pc_date)
+
+# match the frequency
+unemploy_nsw = unemploy_nsw %>% mutate(Qtr = as.yearqtr(Date)) %>% group_by(Qtr) %>% summarise(unemploy_qtr_rate = mean(Unemployment_rate))
+all_data_original$unemploy = unemploy_nsw$unemploy_qtr_rate
+
+# match the unit
+
+# declare as a ts object
+unemploy_nsw = ts(unemploy_nsw$unemploy_qtr_rate)
+
+###############################################
+# forex: Australian Dollar Trade-weighted Index
+# import 
+# forex1 = read_excel("data/Forex_till2010.xls")[-c(1:20), c(1,15)]
+# forex2 = read_excel("data/Forex_from2010.xls")[-c(1:10), c(1,3)]
+# names(forex1) = c("Date", "AUD_index")
+# names(forex2) = c("Date", "AUD_index")
+# forex = rbind(forex1, forex2)
+# forex = forex %>% mutate_if(is.character, as.numeric)
+# forex$Date = as.Date(forex$Date, origin = "1899-12-30")
+# rm(forex1, forex2)
+
+forex = read.csv("data/AUD_index.csv")
+forex$Date = as.Date(forex$Date, format = "%d/%m/%Y")
+
+# match the time window 
+forex = forex %>% filter(Date <= end_date & Date >= start_index_date)
+
+# match the frequency
+forex = forex %>%
+    mutate(Year = year(Date), Quarter = quarter(Date)) %>%
+    group_by(Year, Quarter) %>%
+    filter(Date == max(Date)) %>%
+    ungroup() %>%
+    mutate(Qtr = as.yearqtr(Date)) %>%
+    dplyr::select(Qtr, AUD_index)
+#forex = forex %>% mutate(Qtr = as.yearqtr(Date)) %>% group_by(Qtr) %>% summarise(AUD_qtr_index = mean(AUD_index)) 
+# all_data_original$forex = forex$AUD_qtr_index
+all_data_original$forex = forex$AUD_index[-1]
+
+# match the unit 
+forex = forex %>% mutate(AUD_qtr_rate = log(AUD_index) - log(dplyr::lag(AUD_index, n = 1))) 
+forex = forex[-1,]
+
+# declare as a ts object 
+forex = ts(forex$AUD_qtr_rate)
+```
+
+## Analyse the time series characteristics
+
+### Raw data plots
+
+```{r}
+##################
+# individual plots 
+par(mfrow = c(3,3))
+# 3-month zero-coupon yields
+plot(all_data_original$Date, all_data_original$zcp3m, "l", ylab = "(%)", xlab = "Year", main = TeX("r^{(1)}"))
+# 10-year zero-coupon yield
+plot(all_data_original$Date, all_data_original$zcp10y, "l", ylab = "(%)", xlab = "Year", main = TeX("r^{(40)}"))
+# 10-year zero-coupon spread 
+plot(all_data_original$Date, zcp10y_spread, "l", ylab = "(%)", xlab = "Year", main = TeX("r^{(40)} - r^{(1)}"))
+abline(h = 0, lty = 2)
+# Hedonic home value index \n Sydney houses
+plot(all_data_original$Date, all_data_original$home_index, "l", ylab = "Index Value", xlab = "Year", main = TeX("HVI"))
+# GDP
+plot(all_data_original$Date, all_data_original$GDP, "l", ylab = "(%)", xlab = "Year", main = TeX("GDP "))
+# CPI
+plot(all_data_original$Date, all_data_original$CPI, "l", ylab = "(%)", xlab = "Year", main = TeX("CPI "))
+# S&P/ASX200 closing price
+plot(all_data_original$Date, all_data_original$ASX200, "l", ylab = "Price", xlab = "Year", main = TeX("ASX"))
+# NSW unemployment rates
+# plot(all_data_original$Date, all_data_original$unemploy, "l", ylab = "(%)", xlab = "Year", main = "UE")
+# AUD trade-weighted index
+plot(all_data_original$Date, all_data_original$forex, "l", ylab = "Index Value", xlab = "Year", main = TeX("AUD"))
+```
+
+### Transformed data plots
+
+```{r, message=FALSE, warning=FALSE}
+##################
+# individual plots 
+all_data = cbind(zcp3m, zcp10y_spread, home_value_houses_nsw, gdp, asx200, forex)
+par(mfrow = c(2,2))
+# plot(zcp10y$Qtr, zcp10y_spread, "l", ylab = "spread", xlab = "", main = "10-year zero-coupon spread")
+plot(zcp10y$Qtr, home_value_houses_nsw, "l", ylab = "(%)", xlab = "Year", main = TeX("h_t"))
+abline(h = 0, lty = 2)
+# plot(zcp10y$Qtr, rental_houses_nsw, "l", ylab = "yield", xlab = "", main = "Hedonic rental yields \n Sydney houses")
+plot(zcp10y$Qtr, gdp, "l", ylab = "(%)", xlab = "Year", main = TeX("g_t "))
+abline(h = 0, lty = 2)
+# plot(zcp10y$Qtr, corpBBB_10y_spread, "l")
+plot(zcp10y$Qtr, asx200, "l", ylab = "(%)", xlab = "Year", main = TeX("a_t"))
+abline(h = 0, lty = 2)
+# plot(zcp10y$Qtr, unemploy_nsw, "l", ylab = "rate", xlab = "", main = "NSW unemployment rates")
+plot(zcp10y$Qtr, forex, "l", ylab = "(%)", xlab = "Year", main = TeX("d_t"))
+abline(h = 0, lty = 2)
+
+##########
+# combined
+par(mfrow = c(1,2))
+# zcp3m vs mortgage
+plot(all_data_original$Date, all_data_original$zcp3m, "l", ylab = "(%)", ylim = c(-1,11), xlab = "Year", main = "Correlation of 3-month zero-coupon yield \n and mortgage rate")
+lines(all_data_original$Date, lending, "l", lty = 2)
+legend(1992.5, 2.5, legend = c(TeX("r^{(1)}"), "MR"), lty = 1:2, box.lty = 0)
+
+# GDP vs CPI
+# plot(all_data_original$Date, gdp, "l", ylab = "(%)", ylim = c(-0.08,0.04), xlab = "Year", main = "")
+# lines(all_data_original$Date, cpi, "l", lty = 2)
+# legend(1992.5, -0.065, legend = c(TeX("g_t"), TeX("c_t")), lty = 1:2, box.lty = 0)
+
+# unemployment vs zcp10y
+plot(all_data_original$Date, zcp10y_spread, "l", ylab = "(%)", ylim = c(-1.5,11), xlab = "Year", main = "Correlation of 10-year zero-coupon spread \n and NSW unemployment rate")
+lines(all_data_original$Date, unemploy_nsw, "l", lty = 2)
+legend(2006, 11, legend = c(TeX("r^{(40)} - r^{(1)}"), TeX("UE")), lty = 1:2, box.lty = 0)
+```
+
+### Correlation
+
+- `Mortgage rate` vs `3-month zero-coupon yield` ($\rho$ = 0.90). Mortgage rate removed.
+
+- `10-year zero-coupon spread` vs `NSW unemployment rate` ($\rho$ = 0.75). Unemployment rate removed.
+
+- `10-year zero-coupon spread` vs `10-year BBB-rated corporate bond spread` ($\rho$ = 0.621). Corporate bond was removed.
+
+- `S&P/ASX200 growth` vs `AUD trade index growth` ($\rho$ = 0.42). Both kept.
+
+```{r, message=FALSE, warning=FALSE,fig.width = 5, fig.height = 4, fig.align = "center"}
+all_data = cbind(zcp3m, zcp10y_spread, lending, home_value_houses_nsw, gdp, cpi, asx200, unemploy_nsw, forex)
+######
+# corr 
+par(mfrow = c(1,1))
+corrplot(cor(all_data, method = "pearson"), tl.col = "black", diag = F, type = "upper", tl.srt = 90)
+```
+
+### Principal Component Analysis
+
+On the 1st and 2nd principal components:
+
+- `GDP`, `S&P/ASX200`, `AUD trade index growth` are similar.
+
+- `NSW unemployment rate`, `Sydney home value index growth`, `10-year zero-coupon spread` are similar.
+
+- 6 out of 8 variables explain 90% of variation.
+
+```{r, message=FALSE, warning=FALSE, fig.align = "center"}
+set.seed(1)
+all_pca = prcomp(all_data, scale = T)
+
+par(mfrow = c(1,2))
+biplot(all_pca)
+
+# proportion of variance explained 
+pve = (all_pca$sdev ^ 2 / sum(all_pca$sdev ^ 2))
+plot(cumsum(pve), xlab = "#Principal Components", main = "Proportion of Variance Explained", ylab = "Cumulative %", ylim = c(0,1), type = "b")
+all_data = cbind(zcp3m, zcp10y_spread, home_value_houses_nsw,  gdp, cpi, asx200, forex)
+```
+
+# Stationarity for individual variables
+
+## Statistical tests for stationarity
+
+- Augmented Dickey–Fuller test ($H_0$: unit root present in the series).
+
+- Phillips-Perron test ($H_0$: integrated of order 1).
+
+- Significant level is chosen to be 0.05. pvalue = 0.01 means \<= 0.01. No laps at this stage.
+
+- Series to be transformed are: `3-month zero-coupon yield`, `Hedonic rental yields - Sydney houses`.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+###############
+# ACF/PACF plots
+par(mfrow = c(2,4))
+for (i in 1:length(all_var_names)) {
+  acf(all_data[,i])
+  pacf(all_data[,i])
+}
+
+sig_level = 0.05 # pvalue threshold 
+
+
+########################
+# choose the correct lag 
+# PP tests
+adf_test_lag = function (x, sig_level = 0.05) {
+    output = data.frame(stats = NA, pvalue = NA)
+    results = adf.test(x)$type1
+    i = 1
+    output$stats = results[i,2]
+    output$pvalue = results[i,3]
+    while (output$pvalue > sig_level & i <= 4) {
+        i = i + 1
+        output$stats = results[i,2]
+        output$pvalue = results[i,3]
+    }
+    return (output)
+}
+
+
+
+##############################
+# Augmented Dickey–Fuller test
+adf_results = data.frame(ADF_statistics = rep(NA,length(all_var_names)), ADF_pvalues = rep(NA,length(all_var_names)), row.names = all_var_names)
+for (i in 1:length(all_var_names)) {
+  results = adf_test_lag(all_data[,i])
+  adf_results[i,1] = results$stats 
+  adf_results[i,2] = results$pvalue
+} 
+adf_results = adf_results %>% mutate(ADF_stationary = ifelse(ADF_pvalues <= sig_level, "Yes", "No evidence"))
+
+######################
+# Phillips-Perron test 
+pp_results = data.frame(PP_statistics = rep(NA, length(all_var_names)), PP_pvalues = rep(NA, length(all_var_names)), row.names = all_var_names)
+for (i in 1:ncol(all_data)) {
+  results = aTSA::pp.test(all_data[,i])
+  pp_results[i,1] = results[1,2]
+  pp_results[i,2] = results[1,3]
+} 
+pp_results = pp_results %>% mutate(PP_stationary = ifelse(PP_pvalues <= sig_level, "Yes", "No evidence"))
+```
+
+```{r, include=TRUE}
+########################
+# vars to be transformed
+non_stationary_var_names = c("3-month zero-coupon yield")
+pp_results_trans = data.frame(PP_statistics = rep(NA, length(non_stationary_var_names)), PP_pvalues = rep(NA, length(non_stationary_var_names)), row.names = non_stationary_var_names)
+adf_results_trans = data.frame(ADF_statistics = rep(NA, length(non_stationary_var_names)), ADF_pvalues = rep(NA, length(non_stationary_var_names)), row.names = non_stationary_var_names)
+
+###########################
+# printing the prev results 
+# pvalue = 0.01 actually means pvalue < 0.01
+print_pvalue = function (x) {
+    # input is a vector of pvalues 
+    output = ifelse(x == 0.01, "< 0.01", x)
+}
+
+# print results 
+stationary_results_lag4 = cbind(adf_results, pp_results)
+stationary_results_lag4$ADF_pvalues = print_pvalue(stationary_results_lag4$ADF_pvalues)
+stationary_results_lag4$PP_pvalues = print_pvalue(stationary_results_lag4$PP_pvalues)
+kbl(stationary_results_lag4) %>% kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+## Transform if non-stationary
+
+Non-stationary series were differenced once. Now, all series starts from Q2 2002.
+
+```{r, results='hide'}
+###########################
+# 3-month zero-coupon yield
+# differencing 
+#zcp3m_stationary = zcp3m - dplyr::lag(as.vector(zcp3m), n = 1)
+zcp3m_stationary = zcp3m
+zcp3m_stationary = ts(zcp3m_stationary[-1])
+
+# store new stationarity test results 
+pp_results_trans[1,1] = tseries::pp.test(zcp3m_stationary)$statistic
+pp_results_trans[1,2] = tseries::pp.test(zcp3m_stationary)$p.value
+results = adf.test(zcp3m_stationary)$type1
+adf_results_trans[1,1] = results[1,2] # stats
+adf_results_trans[1,2] = results[1,3] # pvalue 
+
+############################
+# 10-year zero-coupon spread
+# differencing 
+# zcp10y_spread_stationary = zcp10y_spread - dplyr::lag(as.vector(zcp10y_spread), n = 1)
+# zcp10y_spread_stationary = ts(zcp10y_spread_stationary[-1])
+# 
+# # store new stationarity test results 
+# pp_results_trans[2,1] = tseries::pp.test(zcp10y_spread_stationary)$statistic
+# pp_results_trans[2,2] = tseries::pp.test(zcp10y_spread_stationary)$p.value
+# results = adf.test(zcp10y_spread_stationary)$type1
+# adf_results_trans[2,1] = results[1,2] # stats
+# adf_results_trans[2,2] = results[1,3] # pvalue 
+
+# #######################################
+# # Hedonic rental yields - NSW houses
+# # differencing 
+# rental_houses_nsw_stationary = rental_houses_nsw - dplyr::lag(as.vector(rental_houses_nsw), n = 1)
+# rental_houses_nsw_stationary = ts(rental_houses_nsw_stationary[-1])
+
+# # store new stationarity test results 
+# results = tseries::pp.test(rental_houses_nsw_stationary)
+# pp_results_trans[2,1] = results$statistic
+# pp_results_trans[2,2] = results$p.value
+# results = adf.test(rental_houses_nsw_stationary)$type1
+# adf_results_trans[2,1] = results[1,2] # stats
+# adf_results_trans[2,2] = results[1,3] # pvalue 
+
+
+#########################
+# Unemployment rate - NSW
+# # differencing 
+# unemploy_nsw_stationary = unemploy_nsw - dplyr::lag(as.vector(unemploy_nsw), n = 1)
+# unemploy_nsw_stationary = ts(unemploy_nsw_stationary[-1])
+# 
+# # store new stationarity test results 
+# results = tseries::pp.test(unemploy_nsw_stationary)
+# pp_results_trans[4,1] = results$statistic
+# pp_results_trans[4,2] = results$p.value
+# results = adf.test(unemploy_nsw_stationary)$type1
+# adf_results_trans[4,1] = results[1,2] # stats
+# adf_results_trans[4,2] = results[1,3] # pvalue 
+
+####################
+# match time windows
+zcp10y_spread = ts(zcp10y_spread[-1])
+home_value_houses_nsw = ts(home_value_houses_nsw[-1])
+gdp = ts(gdp[-1])
+cpi = ts(cpi[-1])
+asx200 = ts(asx200[-1])
+forex = ts(forex[-1])
+```
+
+```{r}
+pp_results_trans = pp_results_trans %>% mutate(PP_stationary = ifelse(PP_pvalues <= 0.05, "Yes", "No evidence"))
+adf_results_trans = adf_results_trans %>% mutate(ADF_stationary = ifelse(ADF_pvalues <= 0.05, "Yes", "No evidence"))
+
+stationary_results_lag1 = cbind(adf_results_trans, pp_results_trans)
+stationary_results_lag1$ADF_pvalues = print_pvalue(stationary_results_lag1$ADF_pvalues)
+stationary_results_lag1$PP_pvalues = print_pvalue(stationary_results_lag1$PP_pvalues)
+kbl(stationary_results_lag1) %>% kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+# Full VAR
+
+## Find the optimal order p
+
+Notes on R built-in functions:
+
+- Formulas for the statistics ([link](http://www.phdeconomics.sssup.it/documents/Lesson18.pdf)). Ouput `HQ` is HQC, `SIC` is BIC, `FPE` is final prediction error.
+
+- `VARSelect` for every lag up to maximum are based on the same sample size, which is not suitable. We compute the statistics mannually.
+
+- `AIC()`, `BIC()` do not use the right residual covariance.
+
+Three types of VAR deterministic regressors:
+
+- `none`: optimal lag is 1.
+
+  \begin{align*}
+    \mathbf{y}_{t} = \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
+
+- `const`: optimal lag is 1.
+
+\begin{align*}
+    \mathbf{y}_{t} = \boldsymbol{\alpha} + \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
+
+- `trend`: optimal lag is 1.
+
+\begin{align*}
+    \mathbf{y}_{t} = \boldsymbol{\alpha} + \vect \gamma t + \boldsymbol{\beta}_{1}\mathbf{y}_{t-1}+ \boldsymbol{\beta}_{2}\mathbf{y}_{t-2}+\cdots++ \boldsymbol{\beta}_{p}\mathbf{y}_{t-p} + \boldsymbol{\epsilon}. \end{align*}
+
+- `both`: `const` and `trend`. optimal lag is 1.
+
+```{r}
+all_data_stationary = cbind(zcp3m_stationary, zcp10y_spread, home_value_houses_nsw, gdp, cpi, asx200, forex)
+all_data_stationary[,1] = all_data_stationary[,1]/100
+all_data_stationary[,2] = all_data_stationary[,2]/100
+# 1. Determine the optimal lag length (testing up to 8 periods)
+# type = "const" is standard for stationary data with non-zero means
+lag_select <- VARselect(all_data_stationary, lag.max = 8, type = "const")
+
+# View the recommendations from different information criteria
+print(lag_select$selection)
+
+# 2. Extract the optimal lag order according to the Akaike Information Criterion (AIC)
+# Alternatively, use "SC(n)" for the stricter Schwarz/BIC criterion
+p_opt <- lag_select$selection["AIC(n)"]
+
+# 3. Fit the VAR model
+var_model <- VAR(all_data_stationary, p = p_opt, type = "const")
+
+# 4. Display the estimation results
+summary(var_model)
+
+# Forecast the next 12 periods (e.g., 12 quarters = 3 years)
+# ci = 0.90 sets a 90% confidence interval for the forecast bands
+var_forecast <- predict(var_model, n.ahead = 60, ci = 0.90)
+plot(var_forecast[["fcst"]][["zcp3m_stationary"]][,1])
+
+
+# Simulation
+# 1. Extract VAR(1) coefficients and constant
+A1 <- Acoef(var_model)[[1]]
+c_vec <- Bcoef(var_model)[, "const"]
+
+# 2. Extract the residual covariance matrix (Sigma)
+Sigma <- summary(var_model)$covres
+
+# 3. Get the last observed row of your stationary data to start the simulation
+last_obs <- as.numeric(tail(all_data_stationary, 1))
+n_vars <- length(last_obs)
+
+# Simulation parameters
+n_sims <- 100      # Number of stochastic paths to generate
+horizon <- 10       # Number of quarters to forecast
+
+# Initialize a 3D array to store the results
+# Dimensions: [Time (horizon), Variables, Simulation Path]
+sim_paths <- array(NA, dim = c(horizon, n_vars, n_sims))
+
+# Run the simulations
+set.seed(123) # For reproducibility
+for (i in 1:n_sims) {
+  
+  # Reset the current state to the last known historical observation
+  current_state <- last_obs
+  
+  for (t in 1:horizon) {
+    # 1. Draw a random shock vector from the multivariate normal distribution
+    shock <- mvrnorm(n = 1, mu = rep(0, n_vars), Sigma = Sigma)
+    
+    # 2. Calculate the next period's values
+    next_state <- c_vec + as.vector(A1 %*% current_state) + shock
+    
+    # 3. (Optional) Apply bounds here if you want to restrict extreme shocks
+    # e.g., capping the interest rate difference if necessary
+    
+    # 4. Store the result and roll the state forward
+    sim_paths[t, , i] <- next_state
+    current_state <- next_state
+  }
+}
+
+# 1. Set up the plotting grid
+# For 7 variables, a 3x3 grid (with two empty panels) is optimal
+par(mfrow = c(3, 3), 
+    mar = c(4, 4, 3, 1),  # Inner margins for each plot (bottom, left, top, right)
+    oma = c(2, 0, 2, 0))  # Outer margins for the whole figure
+
+# 2. Define mathematical titles for the panels (matching your paper's notation)
+plot_titles <- list(
+  zcp3m_stationary = expression(r^{(1)}),
+  zcp10y_spread = expression(r^{(40)} - r^{(1)}),
+  home_value_houses_nsw = expression(h[t]),
+  gdp = expression(g[t]),
+  cpi = expression(pi[t]),
+  asx200 = expression(s[t]),
+  forex = expression(e[t])
+)
+
+# 3. Extract the variable names from your data
+var_names <- colnames(all_data_stationary)
+n_hist <- nrow(all_data_stationary)
+
+# 4. Loop through each variable to create its panel
+for (v in var_names) {
+  
+  # Extract historical data
+  hist_y <- all_data_stationary[, v]
+  
+  # Extract forecast data
+  fc_mean <- var_forecast$fcst[[v]][, "fcst"]
+  fc_lower <- var_forecast$fcst[[v]][, "lower"]
+  fc_upper <- var_forecast$fcst[[v]][, "upper"]
+  
+  # To avoid a gap on the chart, stitch the last historical point to the start of the forecast
+  last_hist_val <- tail(hist_y, 1)
+  fc_mean_line <- c(last_hist_val, fc_mean)
+  fc_lower_line <- c(last_hist_val, fc_lower)
+  fc_upper_line <- c(last_hist_val, fc_upper)
+  
+  # Create time indices
+  n_fcst <- length(fc_mean)
+  t_hist <- 1:n_hist
+  t_fcst <- n_hist:(n_hist + n_fcst) # Starts at the last historical period
+  
+  # Determine optimal Y-axis limits to fit everything
+  ylim_max <- max(c(hist_y, fc_upper_line), na.rm = TRUE)
+  ylim_min <- min(c(hist_y, fc_lower_line), na.rm = TRUE)
+  
+  # Plot the historical data
+  plot(t_hist, hist_y, 
+       type = "l", 
+       lty = 1,              # Solid line
+       col = "black", 
+       ylim = c(ylim_min, ylim_max),
+       xlim = c(1, n_hist + n_fcst),
+       xlab = "Quarters", 
+       main = plot_titles[[v]], 
+       cex.main = 1.2)
+  
+  # Add the mean forecast (solid line)
+  lines(t_fcst, fc_mean_line, lty = 1, col = "black")
+  
+  # Add the 90% Confidence Intervals (dotted lines)
+  lines(t_fcst, fc_lower_line, lty = 3, col = "black")
+  lines(t_fcst, fc_upper_line, lty = 3, col = "black")
+}
+```

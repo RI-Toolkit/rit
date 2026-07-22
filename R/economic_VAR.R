@@ -2,10 +2,10 @@
 #'
 #' Returns the simulated paths for various economic and financial variables:
 #' (1) Australia 3-month zero-coupon yields, (2) Australia 10-year zero-coupon
-#' spread, (3) New South Wales houses value index, (4) New South Wales houses
-#' rental yields, (5) Australian GDP, (6) Australian CPI, (7) S&P/ASX200 closing
-#' price, (8) Australian dollar trade-weighted index, (9) Australia mortgage
-#' rate, (10) New South Wales unemployment rate.
+#' spread, (3) New South Wales houses value index,
+#' (4) Australian GDP, (5) Australian CPI, (6) S&P/ASX200 closing
+#' price, (7) Australian dollar trade-weighted index, (8) Australia mortgage
+#' rate, (9) New South Wales unemployment rate.
 #' Simulations are based on a Vector Autoregression model. This function uses
 #' the package `zoo` to convert the frequnency units. Period-by-period summary statistics can be obtained from \code{esg_summary}.
 #'
@@ -50,7 +50,7 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
     ##########################################################
 
     # variable names
-    var_names = c("zcp3m_yield", "zcp10y_spread", "home_index", "rental_yield", "GDP", "CPI", "ASX200", "AUD")
+    var_names = c("zcp3m_yield", "zcp10y_spread", "home_index", "GDP", "CPI", "ASX200", "AUD")
     sim_var_names = c(var_names, "mortgage_rate", "unemployment_rate")
 
     VAR = var_model()
@@ -58,8 +58,7 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
         intercept = VAR$intercept
         coef = VAR$coef
         covres = VAR$covres
-        init_stat_2020q4 = VAR$init_stat_2020q4
-        init_stat_2021q1 = VAR$init_stat_2021q1
+        init_stat_2025q4 = VAR$init_stat_2025q4
         init_orig = VAR$init_orig
         mortgage_rate = VAR$mortgage_rate
         unemployment_rate = VAR$unemployment_rate
@@ -72,23 +71,23 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
     # intercept in VAR(1)
     # coefficient matrix in VAR(1)
     # residual covariance matrix in VAR(1)
-    colnames(coef) = var_names
-    colnames(covres) = var_names
+    # colnames(coef) = var_names
+    # colnames(covres) = var_names
 
-    coef = as.matrix(t(coef))
-    coef1 = coef
-    coef1[1,1] = coef1[1,1] + 1
-    coef1[4,4] = coef1[4,4] + 1
-    coef2 = matrix(0,nrow = length(var_names), ncol = length(var_names))
-    coef2[,1] = -coef[,1]
-    coef2[,4] = -coef[,4]
+    coef = as.matrix(coef)
+    # coef1 = coef
+    # coef1[1,1] = coef1[1,1] + 1
+    # coef1[4,4] = coef1[4,4] + 1
+    # coef2 = matrix(0,nrow = length(var_names), ncol = length(var_names))
+    # coef2[,1] = -coef[,1]
+    # coef2[,4] = -coef[,4]
 
     ##################
     # initialisation #
     ##################
 
     # starting quarter
-    init_qtr = as.Date("2021-01-01")
+    init_qtr = as.Date("2026-1-1")
     num_pred = 4 * num_years
     time_index = seq(from = init_qtr, length.out = num_pred + 1, by = "quarter")
     path_index = paste("trajectory_", 1:num_paths, sep = "")
@@ -117,14 +116,15 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
         colnames(path) = var_names
 
         # simulate for num_pred steps
-        new_init = init_stat_2021q1 # z_{t-1}
-        old_init = init_stat_2020q4 # z_{t-2}
+        new_init = init_stat_2025q4 # z_{t-1}
+        # old_init = init_stat_2020q4 # z_{t-2}
 
         for (i in 1:num_pred) {
+
             e = as.vector(noise[[noise_index]][,i])
-            zt = intercept + coef1 %*% new_init + coef2 %*% old_init + as.matrix(chol(covres)) %*% e
+            zt = intercept + as.vector(coef %*% new_init) + as.matrix(chol(covres)) %*% e
             path[i,] = zt
-            old_init = new_init # z_{t-2} <- z_{t-1}
+            # old_init = new_init # z_{t-2} <- z_{t-1}
             new_init = zt # z_{t-1} <- z_t
 
         }
@@ -154,7 +154,7 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
         return (v_path)
     }
     stat = var_sim_stationary(num_pred, num_paths)
-    stat = lapply(stat, function (x) {cbind(x[,1:2]/100, x[,3:8])})
+    stat = lapply(stat, function (x) {cbind(x[,1:2], x[,3:7])})
 
     ################################################
     # convert forecast variables -> original units #
@@ -170,18 +170,18 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
     sim = replicate(n = length(var_names),
                     expr = {data.frame(matrix(NA, nrow = num_pred, ncol = num_paths))},
                     simplify = F)
-    sim = lapply(1:8, function (y) { lapply(1:num_paths, function (x) {stat[[x]][,y]}) })
+    sim = lapply(1:7, function (y) { lapply(1:num_paths, function (x) {stat[[x]][,y]}) })
     sim = lapply(sim, function (x) {as.data.frame(x)})
-    sim[[1]] = rbind(init_orig[1]/100, as.data.frame(sim[[1]])) # zcp3m
-    sim[[2]] = rbind(init_orig[2]/100, as.data.frame(sim[[2]])) # zcp10y
+    sim[[1]] = rbind(init_orig[1], as.data.frame(sim[[1]])) # zcp3m
+    sim[[2]] = rbind(init_orig[2], as.data.frame(sim[[2]])) # zcp10y_spread
     sim[[3]] = apply(sim[[3]], 2, function (x) {index2grow_inv(x, init_orig[3])}) # home_index
-    sim[[4]] = rbind(init_orig[4], as.data.frame(sim[[4]])) # rental
-    sim[[5]] = apply(sim[[5]], 2, function (x) {index2grow_inv(x, init_orig[5])}) # GDP
-    sim[[6]] = apply(sim[[6]], 2, function (x) {index2grow_inv(x, init_orig[6])}) # CPI
-    sim[[7]] = apply(sim[[7]], 2, function (x) {index2grow_inv(x, init_orig[7])}) # ASX200
-    sim[[8]] = apply(sim[[8]], 2, function (x) {index2grow_inv(x, init_orig[8])}) # AUD
-    sim[[9]] = sim[[1]] + mortgage_rate # mortage_rate
-    sim[[10]] = sim[[2]] + unemployment_rate # unemployment_rate
+    # sim[[4]] = rbind(init_orig[4], as.data.frame(sim[[4]])) # rental
+    sim[[4]] = apply(sim[[4]], 2, function (x) {index2grow_inv(x, init_orig[5])}) # GDP
+    sim[[5]] = apply(sim[[5]], 2, function (x) {index2grow_inv(x, init_orig[6])}) # CPI
+    sim[[6]] = apply(sim[[6]], 2, function (x) {index2grow_inv(x, init_orig[7])}) # ASX200
+    sim[[7]] = apply(sim[[7]], 2, function (x) {index2grow_inv(x, init_orig[8])}) # AUD
+    sim[[8]] = sim[[1]] + mortgage_rate # mortage_rate
+    sim[[9]] = sim[[2]] + unemployment_rate # unemployment_rate
     sim = lapply(sim, function(x){row.names(x) = time_index; colnames(x) = path_index; return (x)})
     names(sim) = sim_var_names
 
@@ -192,7 +192,7 @@ esg_var_simulator = function (num_years = 5, num_paths = 10, frequency = "quarte
     if (isTRUE(return_sdf)) {
         # find lambda_t's for different trajectories
         lambda_t = replicate(n = num_paths,
-                                expr = {matrix(NA, ncol = num_pred+1, nrow = 8)},
+                                expr = {matrix(NA, ncol = num_pred+1, nrow = 7)},
                                 simplify = F)
         lambda_t = lapply(1:num_paths,
                           function (x) {lambda_t[[x]] = sapply(1:num_pred,

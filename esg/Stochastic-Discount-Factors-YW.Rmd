@@ -1,0 +1,295 @@
+---
+title: "Retirement Income Toolkit - Economic Scenario - Pricing Kernels"
+author: "Queenie Huang"
+output:
+ bookdown::html_document2:
+    toc: yes
+    toc_depth: '4'
+    number_sections: yes
+    fig_caption: yes
+    code_folding: hide
+urlcolor: blue
+header-includes: |    
+ \usepackage{amsmath,amsthm,amssymb,amsfonts, mathtools, empheq, bbm}
+ \newcommand{\vect}[1]{\boldsymbol{#1}}
+---
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 15px;
+  }
+td {  /* Table  */
+  font-size: 15px;
+}
+h1.title {
+  font-size: 30px;
+}
+h1 { /* Header 1 */
+  font-size: 26px;
+  color: DarkBlue;
+}
+h2 { /* Header 2 */
+    font-size: 22px;
+  color: DarkBlue;
+}
+h3 { /* Header 3 */
+  font-size: 18px;
+  color: DarkBlue;
+}
+code.r{ /* Code block */
+    font-size: 15px;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 15px;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+options(scipen = 1, digits = 6) # use 2 d.p. in output
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(zoo)
+library(janitor)
+library(doParallel)
+```
+
+
+# Import Data 
+
+```{r}
+start_pc_date = as.Date("1993-04-01")
+end_date = as.Date("2025-12-31")
+max_maturity = 40
+n_index = c(1,4,8,20,40)
+maturities = c("Date", paste(1:max_maturity, "qtrs", sep = "_"))
+var_names = c("zcp3m_yield", "zcp10y_spread", "home_index_growth", "GDP_growth", "CPI_growth", "ASX200_growth", "AUD_growth")
+
+#######################
+# import interest rates
+zcp = read.csv("data/zcb.csv")[,c(1,n_index+1)]
+names(zcp) = c("Date", "ZCP3m","ZCP1y","ZCP2y","ZCP5y","ZCP10y")
+zcp$Date = as.Date(zcp$Date, format = "%d/%m/%Y")
+
+
+# match the frequency 
+zcp = zcp %>%
+    filter(Date <= end_date & Date >= start_pc_date) %>%
+    mutate(Year = year(Date), Quarter = quarter(Date)) %>%
+    group_by(Year, Quarter) %>%
+    filter(Date == max(Date)) %>%
+    ungroup() %>%
+    mutate(Qtr = as.yearqtr(Date)) %>%
+    dplyr::select(Qtr, ZCP3m, ZCP1y, ZCP2y, ZCP5y, ZCP10y)
+
+# add row names & change class()
+time_names_past = zcp$Qtr
+zcp_sdf = as.matrix(zcp[-1,-1]) / 100
+zcp = as.matrix(zcp[-1,-1]) / 100
+row.names(zcp) = as.character(time_names_past[-1])
+row.names(zcp_sdf) = as.character(time_names_past[-1])
+
+###################
+# import zt vectors 
+all_data = all_data_stationary
+all_data = as.matrix(t(all_data))
+row.names(all_data) = var_names
+colnames(all_data) = as.character(time_names_past[-1])
+all_data[1,] = all_data[1,]
+all_data[2,] = all_data[2,]
+
+##############
+# VAR Dynamics
+# intercept 
+intercept = matrix(c_vec, nrow = 7, ncol = 1)
+# coefficient matrix in VAR(1)
+coef = data.frame(A1,
+                  row.names = var_names)
+colnames(coef) = var_names
+coef = as.matrix(t(coef))
+
+# residual covariance matrix 
+covres = data.frame(Sigma,
+                    row.names = var_names)
+colnames(covres) = var_names
+covres = as.matrix(t(covres))
+simga_half = chol(covres)
+e1 = as.matrix(c(1, rep(0,6)))
+```
+
+# Model - estimate lambda_0, lambda_1 (historical data)
+
+```{r}
+######################
+# calculate An, Bn, Cn
+
+get_ABC = function (lambda_0, lambda_1) {
+  lambda_0 = as.matrix(lambda_0)
+  lambda_1 = as.matrix(lambda_1)
+  
+  # initialise dataframes to store An, Bn, Cn
+  An = matrix(NA, nrow = 1, ncol = max_maturity)
+  Bn = matrix(NA, nrow = length(intercept), ncol = max_maturity)
+  Cn = matrix(NA, nrow = length(intercept), ncol = max_maturity)
+  
+  # initial values A1, B1, C1
+  An[1] = 0
+  Bn[,1] = -e1
+  Cn[,1] = rep(0,length(intercept))
+  
+  # terminal values A40, B40, C40
+  # An[max_maturity] = 0
+  # Bn[,max_maturity] = -max_maturity * e1 - max_maturity * c(0,1,rep(0,length(intercept)-2))
+  # Cn[,max_maturity] = rep(0,length(intercept))
+  # 
+  # calculate recursively
+  for (n in 1:(max_maturity-1)) {
+    An[n+1] = An[n] + t(Bn[,n]) %*% (intercept - simga_half %*% lambda_0) + 1/2 * t(Bn[,n]) %*% covres %*% Bn[,n]
+    Bn[,n+1] = -e1 + t(coef - simga_half %*% lambda_1) %*% Bn[,n] + Cn[,n]
+    Cn[,n+1] = 0 %*% Bn[,n]
+  }
+  
+  # output 
+  output = list(An, Bn, Cn)
+  names(output) = c("An", "Bn", "Cn")
+  output = lapply(output, function(x){x = as.matrix(x)})
+  output = lapply(output, function(x){colnames(x) = maturities[-1]; return (x)})
+  return (output)
+}
+
+#############################################
+# calculate sum (r(n)t hat - r(n)t) ^ 2 stats
+
+# only for r(1), r(4), r(8), r(20), r(40)
+get_rnt = function (lambda_0, lambda_1) {
+  # An, Bn, Cn
+  ABCn = get_ABC(lambda_0, lambda_1)
+  An = ABCn$An
+  Bn = ABCn$Bn
+  Cn = ABCn$Cn
+
+  # zt: all_data
+
+  # initialise dataframe to store historical r_t^(n)
+  rnt = matrix(NA, nrow = length(time_names_past)-1, ncol = max_maturity)
+  row.names(rnt) = as.character(time_names_past[-1])
+  colnames(rnt) = maturities[-1]
+
+  # r(n)t hat
+  for (t in 2:length(time_names_past)-1) {
+    for (n in n_index) {
+      rnt[t,n] = -An[n] / n - t(Bn[,n]) %*% as.matrix(all_data[,t]) / n
+    }
+  }
+
+  return (rnt[,n_index])
+}
+
+# r(1), r(2), ..., r(40)
+# get_rnt = function (lambda_0, lambda_1) {
+#   # An, Bn, Cn
+#   ABCn = get_ABC(lambda_0, lambda_1)
+#   An = ABCn$An
+#   Bn = ABCn$Bn
+#   Cn = ABCn$Cn
+#   
+#   # zt: all_data
+#   
+#   # initialise dataframe to store historical r_t^(n)
+#   rnt = matrix(NA, nrow = length(time_names_past), ncol = max_maturity)
+#   row.names(rnt) = as.character(time_names_past)
+#   colnames(rnt) = maturities[-1]
+#   
+#   # r(n)t hat  
+#   for (t in 2:length(time_names_past)) {
+#     for (n in 1:max_maturity) {
+#       rnt[t,n] = -An[n] / n - t(Bn[,n]) %*% all_data[,t] / n - t(Cn[,n]) %*% all_data[,t-1] / n
+#     }
+#   }
+#   
+#   return (rnt[-1,])
+# }
+
+get_sse = function (lambda_list) {
+  # reorganise parameters
+  lambda_0 = matrix(lambda_list[1:7], nrow = 7)
+  lambda_1 = matrix(lambda_list[8:56], nrow = 7)
+  
+  rnt_hat = get_rnt(lambda_0, lambda_1)
+  sum((rnt_hat - zcp) ^ 2)
+}
+
+#################################
+# minimise for lambda_0, lambda_1
+lambda = rep(0, 8*7)
+
+optim_ctrl = list(maxit = 500)
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+lambdas = optim(lambda, get_sse, control = optim_ctrl)
+stopCluster(cl)
+lambdas
+
+lambda_0 = matrix(lambdas$par[1:7], nrow = 7)
+lambda_1 = matrix(lambdas$par[8:56], nrow = 7)
+```
+
+# Model - historical s_t
+
+```{r}
+lambda_t = sapply(1:130, function (x) {lambda_0 + lambda_1 %*% all_data[,x]}, simplify = T)
+st_past = sapply(1:130, function (x) {exp(-all_data[1,x] - 1/2 * sum(lambda_t[,x]^2))})
+plot(time_names_past[-1], st_past * 100, "l", main = "Historical SDFs", xlab = "", ylab = "")
+```
+
+
+# Testing: get_var_simulations
+
+```{r}
+num_paths = 10
+num_years = 20
+
+# source("../SDF_Simulation.R")
+# source("../VAR.R")
+
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+set.seed(1)
+#sdf = get_var_simulations(num_paths = num_paths, num_years = num_years, return_sdf = T)
+sdf = esg_var_simulator(num_paths = num_paths, num_years = num_years, return_sdf = T)
+stopCluster(cl)
+
+par(mfrow = c(2,2))
+
+#######
+# zcp3m
+plot_date = c(as.Date(time_names_past), row.names(sdf$zcp3m_yield)[-1])
+plot_data = c(all_data[1,], sdf$zcp3m_yield[-1,1])
+plot(plot_date, plot_data, "l", main = "zcp3m", col = "grey")
+for (i in 2:num_paths) {
+  plot_data = c(all_data[1,], sdf$zcp3m_yield[-1,i])
+  lines(plot_date, plot_data, col = "grey")
+}
+
+########
+# zcp10y
+plot_data = c(all_data[2,], sdf$zcp10y_spread[-1,1])
+plot(plot_date, plot_data, "l", main = "zcp10y", col = "grey")
+for (i in 2:num_paths) {
+  plot_data = c(all_data[2,], sdf$zcp10y_spread[-1,i])
+  lines(plot_date, plot_data, col = "grey")
+}
+
+#####
+# sdf 
+plot_data = c(st_past, sdf$discount_factors[-1,i])
+plot(plot_date, plot_data, "l", main = "SDFs", xlab = "", ylab = "", col = "grey")
+for (i in 2:num_paths) {
+  plot_data = c(st_past, sdf$discount_factors[-1,i])
+  lines(plot_date, plot_data, col = "grey")
+}
+```
