@@ -79,7 +79,6 @@ val_la <- value_policy(la, cf_la)
 
 #######################
 # Example 4
-
 calculatefee <- function(prop, length, value, seed) {
 
     state <- sim_indiv_path(init_age = 65, female = 1, seed = seed, n = N)
