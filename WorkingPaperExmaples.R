@@ -7,7 +7,7 @@ load_all(export_all = FALSE)
 #######################
 # Example 1
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, n = 100)
+cf_la <- simulate_cf(la, n = 1000)
 val_la <- value_policy(la, cf_la)
 
 
@@ -64,7 +64,7 @@ death_ages <- get_ages_at_death(surv, max_years = 100, n_paths = 100)
 state <- construct_state_matrix(death_ages, max_years = 100)
 
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, n = 100, state = state)
+cf_la <- simulate_cf(la, n = 1000, state = state)
 val_la <- value_policy(la, cf_la)
 
 
@@ -72,7 +72,7 @@ val_la <- value_policy(la, cf_la)
 # Example 3
 sdf_ex3 <- list(sdf = t(matrix(rep((1+0.03)^-1, 100*100), ncol  = 100)))
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, n = 100, econ_var = sdf_ex3)
+cf_la <- simulate_cf(la, n = 1000, econ_var = sdf_ex3)
 val_la <- value_policy(la, cf_la)
 
 
