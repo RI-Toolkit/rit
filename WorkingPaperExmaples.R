@@ -7,7 +7,7 @@ load_all(export_all = FALSE)
 #######################
 # Example 1
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la)
+cf_la <- simulate_cf(la, n = 100)
 val_la <- value_policy(la, cf_la)
 
 

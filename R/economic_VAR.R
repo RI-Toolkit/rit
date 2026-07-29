@@ -216,7 +216,8 @@ esg_var_simulator = function (num_years = 5, num_paths = 1000, frequency = "quar
         st = rbind(init_st,st)
 
         # st[2,] = ifelse(st[2,] > 1.2,1.2,ifelse(st[2,] < 0.8, 0.8, st[2,])) # trim the irregular values: historical data: interest rate < 0
-        st[-1, ][st[-1, ] > 2] = 2
+        st[-1, ][st[-1, ] > 1.4] = 1.4
+        st[-1, ][st[-1, ] < 0.7] = 0.7
         row.names(st) = as.character(time_index)
         colnames(st) = path_index
 
