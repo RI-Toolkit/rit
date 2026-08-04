@@ -21,6 +21,8 @@
 #' the wave index = (interview year - 1998)/2 + 1
 #' @param latent
 #' initial value of latent factor, normally take the value 0
+#' @param freq
+#' integer denoting the number of transition steps per year (default is 1 for annual)
 #'
 #' @return
 #' list of transition probability matrices
@@ -29,34 +31,21 @@
 #' @import expm
 #' @examples trans_probs=get_trans_probs(n_states=5, model_type='F',
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
-#' latent = 0)
+#' latent = 0, freq = 12)
 #'
-
-get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, latent = 0) {
-
-    # wave_index is removed from the input
-    # let the user only input year is easier to use
-    # if (n_states == 5) {
-    #   if (year != 2012) {
-    #     wave_index = (year - 1998) / 2 + 1
-    #   }
-    #   else if (wave_index != 8) {
-    #     year = 2 * (wave_index - 1) + 1998
-    #   }
-    # }
+get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, latent = 0, freq) {
 
     if (n_states == 5) {
         # Calculate wave_index directly from year (continuous allowed)
         wave_index <- (year - 1998) / 2 + 1
     }
 
-
     if (n_states == 3) {
-        return(health3_get_trans_probs(model_type, param_file, init_age, closure_age, female, year))
+        return(health3_get_trans_probs(model_type, param_file, init_age, closure_age, female, year, freq))
     }
 
     if (n_states == 5) {
-        return(health5_get_trans_probs(model_type, param_file, init_age, closure_age, female, wave_index, latent))
+        return(health5_get_trans_probs(model_type, param_file, init_age, closure_age, female, wave_index, latent, freq))
     }
 
     stop('invalid n_states')
@@ -93,15 +82,15 @@ get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_
 #'
 create_life_table <- function(trans_probs, init_age, closure_age = 110, init_state = 0, cohort = 100000) {
 
-  if (length(trans_probs[[1]][1,]) == 3) {
-    return(health3_create_life_table(trans_probs, init_age, closure_age, init_state, cohort))
-  }
+    if (length(trans_probs[[1]][1,]) == 3) {
+        return(health3_create_life_table(trans_probs, init_age, closure_age, init_state, cohort))
+    }
 
-  if (length(trans_probs[[1]][1,]) == 5) {
-    return(health5_create_life_table(trans_probs, init_age, closure_age, init_state, cohort))
-  }
+    if (length(trans_probs[[1]][1,]) == 5) {
+        return(health5_create_life_table(trans_probs, init_age, closure_age, init_state, cohort))
+    }
 
-  stop('invalid dimensions: trans_probs')
+    stop('invalid dimensions: trans_probs')
 }
 
 
@@ -138,6 +127,8 @@ create_life_table <- function(trans_probs, init_age, closure_age = 110, init_sta
 #' number of people at the beginning of the life table
 #' @param mean
 #' TRUE to return expected life table, FALSE to return all simulated life tables
+#' @param freq
+#' integer denoting the number of transition steps per year
 #'
 #' @return
 #' list of life tables (default) or expected life table (mean == TRUE)
@@ -146,21 +137,21 @@ create_life_table <- function(trans_probs, init_age, closure_age = 110, init_sta
 #'
 #' @examples lifetable_simulated <- simulate_life_table(n_states=5, model_type='F',
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, init_state = 0,
-#' wave_index = 8,latent=0,n_sim=100,cohort=100,mean=FALSE)
+#' wave_index = 8,latent=0,n_sim=100,cohort=100,mean=FALSE, freq = 1)
 #'
-simulate_life_table <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, init_state = 0, wave_index = 8,latent=0,n_sim=100,cohort=100000,mean=FALSE) {
-  if (model_type != 'F') {
-    stop('use frailty model to simulate lifetables')
-  }
-  if (n_states == 3) {
-    return(health3_simulate_life_table(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean))
-  }
+simulate_life_table <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, init_state = 0, wave_index = 8, latent=0, n_sim=100, cohort=100000, mean=FALSE, freq) {
+    if (model_type != 'F') {
+        stop('use frailty model to simulate lifetables')
+    }
+    if (n_states == 3) {
+        return(health3_simulate_life_table(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean, freq))
+    }
 
-  if (n_states == 5) {
-    return(health5_simulate_life_table(model_type, param_file, female, wave_index,latent,init_age,closure_age,init_state,n_sim, cohort, mean))
-  }
+    if (n_states == 5) {
+        return(health5_simulate_life_table(model_type, param_file, female, wave_index, latent, init_age, closure_age, init_state, n_sim, cohort, mean, freq))
+    }
 
-  stop('invalid n_states')
+    stop('invalid n_states')
 }
 
 
@@ -198,15 +189,15 @@ simulate_life_table <- function(n_states, model_type, param_file, init_age, clos
 #' init_state = 0, cohort = 10000)
 simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 110, init_state = 0, cohort = 10000) {
 
-  if (length(trans_probs[[1]][1,]) == 3) {
-    return(health3_simulate_paths(trans_probs, init_age, closure_age, init_state, cohort))
-  }
+    if (length(trans_probs[[1]][1,]) == 3) {
+        return(health3_simulate_paths(trans_probs, init_age, closure_age, init_state, cohort))
+    }
 
-  if (length(trans_probs[[1]][1,]) == 5) {
-    return(health5_simulate_paths(trans_probs, init_age, closure_age, init_state, cohort))
-  }
+    if (length(trans_probs[[1]][1,]) == 5) {
+        return(health5_simulate_paths(trans_probs, init_age, closure_age, init_state, cohort))
+    }
 
-  stop('invalid dimensions: trans_probs')
+    stop('invalid dimensions: trans_probs')
 }
 
 #' Create Survival Probability Plots
@@ -236,15 +227,15 @@ simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 110
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0)
 #' prob_plots(init_state=0, init_age=65, trans_probs=trans_probs)
-
-prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs) {
+#'
+prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs, freq) {
 
     if (length(trans_probs[[1]][1,]) == 3) {
-        return(health3_prob_plots(init_age, closure_age, init_state, trans_probs))
+        return(health3_prob_plots(init_age, closure_age, init_state, trans_probs, freq))
     }
 
     if (length(trans_probs[[1]][1,]) == 5) {
-        return(health5_prob_plots(init_age, closure_age, init_state, trans_probs))
+        return(health5_prob_plots(init_age, closure_age, init_state, trans_probs, freq))
     }
 
     stop('invalid dimensions: trans_probs')
@@ -302,18 +293,21 @@ prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs) {
 #' @param n
 #' integer denoting number of unique latent factor simulations
 #'
+#' @param freq
+#' integer denoting the number of transition steps per year
+#'
 #' @return
 #' dataframe output containing mean and standard deviation of different statistics
 #'
 #' @export
 #'
 #' @examples example
-health_stats <- function (model_type, n_states, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000){
+health_stats <- function (model_type, n_states, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, freq){
     if (n_states == 3) {
-        return(health3_survival_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, param_file, n))
+        return(health3_survival_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, param_file, n, freq))
     }
     if (n_states == 5) {
-        return(health5_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, wave_index, latent, param_file, n))
+        return(health5_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, wave_index, latent, param_file, n, freq))
     }
     stop('invalid n_states')
 }

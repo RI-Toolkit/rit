@@ -21,75 +21,66 @@
 #'
 #' @noRd
 #'
-#' @examples example
-#'
 health3_create_life_table <- function(trans_probs, init_age, closure_age, init_state, cohort) {
     # flagging errors
     if (init_age < 0 | init_age > closure_age) {
-      stop('invalid age')
-    }
-
-    if (as.integer(init_age) != init_age) {
-      stop('initial age must be an integer')
+        stop('invalid age')
     }
 
     if (init_state != 0 & init_state != 1) {
-      stop('invalid state, enter 0 for healthy, 1 for disabled')
+        stop('invalid state, enter 0 for healthy, 1 for disabled')
     }
 
-    if (cohort != floor(cohort)) {
-      stop('cohort must be integer value')
+    if (cohort != floor(cohort) | cohort <= 0) {
+        stop('cohort must be a positive integer')
     }
 
-    if (cohort <= 0) {
-      stop('cohort must be positive integer')
-    }
+    num_transitions <- length(trans_probs)
+    num_periods <- num_transitions + 1
 
-    if (length(trans_probs) != closure_age + 1 - init_age) {
-      stop('initial age does not correspond to the number of transition probability matrices')
-    }
+    # Calculate fractional year step dynamically based on the number of matrices provided
+    step <- (closure_age - init_age) / num_transitions
 
-    # create first row
+    # Pre-allocate matrix for maximum performance during Monte Carlo loops
+    life_table <- matrix(0, nrow = num_periods, ncol = 10)
+    colnames(life_table) <- c("Age", "Alive", "H", "F", "Dead", "H_F", "H_Dead", "F_H", "F_Dead", "H.F_Dead")
+
+    # Initialize period 1
+    life_table[1, "Age"] <- init_age
+    life_table[1, "Alive"] <- cohort
+
     if (init_state == 0) {
-      life_table <- data.frame('Age' = init_age,
-                               'Alive' = cohort,
-                               'H' = cohort,
-                               'F' = 0,
-                               'Dead' = 0,
-                               'H_F' = cohort*trans_probs[[1]][1, 2],
-                               'H_Dead' = cohort*trans_probs[[1]][1, 3],
-                               'F_H' = 0,
-                               'F_Dead' = 0,
-                               'H.F_Dead' = cohort*trans_probs[[1]][1, 3]
-                               )
+        life_table[1, "H"] <- cohort
     } else {
-      life_table <- data.frame('Age' = init_age,
-                               'Alive' = cohort,
-                               'H' = 0,
-                               'F' = cohort,
-                               'Dead' = 0,
-                               'H_F' = 0,
-                               'H_Dead' = 0,
-                               'F_H' = cohort*trans_probs[[1]][2, 1],
-                               'F_Dead' = cohort*trans_probs[[1]][2, 3],
-                               'H.F_Dead' = cohort*trans_probs[[1]][2, 3]
-                               )
-    }
-    for (i in 2:(closure_age-init_age+1)) {
-      # we need to account for all transitions at each age using the transition probabilities
-      life_table[i, 'Age'] <- init_age + i - 1
-      life_table[i, 'H'] <- life_table[i-1, 'H'] - life_table[i-1, 'H_Dead'] - life_table[i-1, 'H_F'] + life_table[i-1, 'F_H']
-      life_table[i, 'F'] <- life_table[i-1, 'F'] + life_table[i-1, 'H_F'] - life_table[i-1, 'F_H'] - life_table[i-1, 'F_Dead']
-      life_table[i, 'Alive'] <- life_table[i, 'H'] + life_table[i, 'F']
-      life_table[i, 'H_F'] <- life_table[i, 'H']*trans_probs[[i]][1, 2]
-      life_table[i, 'H_Dead'] <- life_table[i, 'H']*trans_probs[[i]][1, 3]
-      life_table[i, 'F_H'] <- life_table[i, 'F']*trans_probs[[i]][2, 1]
-      life_table[i, 'F_Dead'] <- life_table[i, 'F']*trans_probs[[i]][2, 3]
-      life_table$'H.F_Dead'[i] <- life_table[i, 'H_Dead'] + life_table[i, 'F_Dead']
-      life_table[i, 'Dead'] <- life_table[i-1, 'Dead'] + life_table$'H.F_Dead'[i-1]
+        life_table[1, "F"] <- cohort
     }
 
-    return(life_table)
+    # Compute initial transitions for row 1
+    life_table[1, "H_F"] <- life_table[1, "H"] * trans_probs[[1]][1, 2]
+    life_table[1, "H_Dead"] <- life_table[1, "H"] * trans_probs[[1]][1, 3]
+    life_table[1, "F_H"] <- life_table[1, "F"] * trans_probs[[1]][2, 1]
+    life_table[1, "F_Dead"] <- life_table[1, "F"] * trans_probs[[1]][2, 3]
+    life_table[1, "H.F_Dead"] <- life_table[1, "H_Dead"] + life_table[1, "F_Dead"]
+
+    # Calculate states for subsequent periods
+    for (i in 2:num_periods) {
+        life_table[i, "Age"] <- init_age + (i - 1) * step
+        life_table[i, "H"] <- life_table[i-1, "H"] - life_table[i-1, "H_Dead"] - life_table[i-1, "H_F"] + life_table[i-1, "F_H"]
+        life_table[i, "F"] <- life_table[i-1, "F"] + life_table[i-1, "H_F"] - life_table[i-1, "F_H"] - life_table[i-1, "F_Dead"]
+        life_table[i, "Alive"] <- life_table[i, "H"] + life_table[i, "F"]
+        life_table[i, "Dead"] <- life_table[i-1, "Dead"] + life_table[i-1, "H.F_Dead"]
+
+        # Predict future transition sizes if we are not at the final absorbing step
+        if (i <= num_transitions) {
+            life_table[i, "H_F"] <- life_table[i, "H"] * trans_probs[[i]][1, 2]
+            life_table[i, "H_Dead"] <- life_table[i, "H"] * trans_probs[[i]][1, 3]
+            life_table[i, "F_H"] <- life_table[i, "F"] * trans_probs[[i]][2, 1]
+            life_table[i, "F_Dead"] <- life_table[i, "F"] * trans_probs[[i]][2, 3]
+            life_table[i, "H.F_Dead"] <- life_table[i, "H_Dead"] + life_table[i, "F_Dead"]
+        }
+    }
+
+    return(as.data.frame(life_table))
 }
 
 #' Create life table (frailty model)
@@ -115,60 +106,45 @@ health3_create_life_table <- function(trans_probs, init_age, closure_age, init_s
 #' cohort size of lifetable
 #' @param mean
 #' FALSE to return list of lifetables, TRUE to return expected lifetable
+#' @param freq
+#' integer denoting the number of transition steps per year
 #'
 #' @return
 #' Dataframe containing life table
 #'
 #' @noRd
 #'
-#' @examples example
-health3_simulate_life_table <- function(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean) {
+health3_simulate_life_table <- function(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean, freq = 1) {
     # flagging errors
-    if (as.integer(n_sim) != n_sim) {
-    stop('n_sim must be an integer')
-    }
-
-    if (n_sim <= 0) {
-    stop('n_sim must be a positive integer')
+    if (as.integer(n_sim) != n_sim | n_sim <= 0) {
+        stop('n_sim must be a positive integer')
     }
 
     if (init_age < 0 | init_age > closure_age) {
-    stop('invalid age')
-    }
-
-    if (as.integer(init_age) != init_age) {
-    stop('initial age must be an integer')
+        stop('invalid age')
     }
 
     if (init_state != 0 & init_state != 1) {
-    stop('invalid state, enter 0 for healthy, 1 for disabled')
+        stop('invalid state, enter 0 for healthy, 1 for disabled')
     }
 
-    if (cohort != floor(cohort)) {
-    stop('cohort must be integer value')
+    if (cohort != floor(cohort) | cohort <= 0) {
+        stop('cohort must be a positive integer')
     }
 
-    if (cohort <= 0) {
-    stop('cohort must be positive integer')
+    # Pre-allocate list to drastically improve loop performance
+    life_tables <- vector("list", n_sim)
+
+    for (i in seq_len(n_sim)) {
+        # Pass freq down to correctly calculate fractional steps
+        TP <- health3_get_trans_probs('F', param_file, init_age, closure_age, female, year, freq)
+        LT <- health3_create_life_table(TP, init_age, closure_age, init_state, cohort)
+        life_tables[[i]] <- LT
     }
 
-    life_tables <- list()
-    for (i in 1:n_sim) {
-    TP <- health3_get_trans_probs('F', param_file, init_age, closure_age, female, year)
-    LT <- health3_create_life_table(TP, init_age, closure_age, init_state, cohort)
-    life_tables[[i]] <- LT
-    }
-
-    if (mean == TRUE) {
-    return(Reduce('+', life_tables)/n_sim)
+    if (mean) {
+        return(Reduce('+', life_tables) / n_sim)
     } else {
-    return(life_tables)
+        return(life_tables)
     }
-
 }
-
-
-
-
-
-

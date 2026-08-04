@@ -92,8 +92,8 @@ value_policy <- function(policy, cashflows, seed = NULL) {
     # Format summary statistics
     msg <- c(msg, "",
              "======= Summary Statistics =======",
-             paste("Mean              : $ ", formatted(stat$mean), sep = ""),
-             paste("Std Dev of Mean   : $ ", formatted(stat$sd), sep = ""),
+             paste("Sample Mean              : $ ", formatted(stat$mean), sep = ""),
+             paste("Std Dev of Sample Mean   : $ ", formatted(stat$sd), sep = ""),
              "----------------------------------",
              paste("Minimum           : $ ", formatted(stat$min), sep = ""),
              paste("Maximum           : $ ", formatted(stat$max), sep = ""),

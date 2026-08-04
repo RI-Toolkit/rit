@@ -61,63 +61,82 @@ cf_account_based_pension <- function(policy, state, data) {
 # ---------------------------------------------------------------------------- #
 
 
-#' Care Annuity - Cashflow Simulator
+#' Care Annuity - Cashflow Simulator (Matrix Optimized)
 #'
-#' @param policy
-#' Policy object containing necessary parameters (see create_policy_CA)
-#' @param state
-#' State vector containing state values for entire duration
-#' @param data
-#' Data frame containing all variables generated using other modules
+#' @param policy Policy object containing necessary parameters (benefit, increase, min, defer)
+#' @param state State matrix or vector (0=H, 1=M, 2=D, 3=MD, -1=Dead)
+#' @param data Data frame containing all variables generated using other modules
 #'
-#' @return
-#' Vector of cashflows for at each time point
-cf_care_annuity <- function(policy, state, data) {
+#' @return Matrix or Vector of cashflows at each time point
+cf_care_annuity <- function(policy, state, data = NULL) {
 
     # Extract relevant policy variables
     increase <- policy$increase
     benefit <- policy$benefit
     minimum <- policy$min
 
-    # Initialize output vector
-    cf <- rep(0, times = length(state))
+    # Extract deferral/waiting period. Default to 0 if not explicitly defined.
+    defer <- policy$defer
+    if (is.null(defer)) defer <- 0
 
-    i <- 1
-    while (state[i] != -1 & i < length(state)) {# while PH is not dead
+    # Check if simulation passed a 2D matrix (all paths at once) or a 1D vector
+    if (is.matrix(state)) {
+        cf <- matrix(0, nrow = nrow(state), ncol = ncol(state))
 
-        # For flat-rate increases of benefits
-        benefit <- benefit * (1 + increase)
+        # Extract column indices to represent periods (t = 1, 2, 3...)
+        t_mat <- col(state)
 
-        # Base + additional benefits from LTC: state[i] = 1 (M), 2 (D), 3(MD)
-        if (!state[i]) {
-            cf[i] <- benefit[1]
-        } else {
-            cf[i] <- benefit[1] + benefit[state[i] + 1]
+        # Growth factor compounded per period
+        growth_factor <- (1 + increase)^(t_mat - 1)
+
+        is_alive <- (state != -1)
+
+        # Check if the current period is strictly after the waiting period
+        after_waiting <- (t_mat > defer)
+
+        # The guarantee period starts after the deferral period ends.
+        in_guarantee <- (t_mat <= (defer + minimum[1]))
+
+        # 1. Base benefit
+        eligible_for_base <- (is_alive | in_guarantee) & after_waiting
+        if (any(eligible_for_base)) {
+            cf[eligible_for_base] <- benefit[1] * growth_factor[eligible_for_base]
         }
 
-        i <- i + 1
+        # 2. Additional impaired benefits
+        impaired <- is_alive & (state > 0) & after_waiting
+        if (any(impaired)) {
+            cf[impaired] <- cf[impaired] + benefit[state[impaired] + 1] * growth_factor[impaired]
+        }
+
+        return(cf)
+
+    } else {
+        # Fallback for 1D vector (single path execution)
+        t <- seq_along(state)
+
+        # Growth factor compounded per period
+        growth_factor <- (1 + increase)^(t - 1)
+        cf <- numeric(length(state))
+
+        is_alive <- (state != -1)
+
+        after_waiting <- (t > defer)
+        in_guarantee <- (t <= (defer + minimum[1]))
+
+        eligible_for_base <- (is_alive | in_guarantee) & after_waiting
+        if (any(eligible_for_base)) {
+            cf[eligible_for_base] <- benefit[1] * growth_factor[eligible_for_base]
+        }
+
+        impaired <- is_alive & (state > 0) & after_waiting
+        if (any(impaired)) {
+            cf[impaired] <- cf[impaired] + benefit[state[impaired] + 1] * growth_factor[impaired]
+        }
+
+        return(cf)
     }
-
-    # i is the death time index
-    # Account for any cashflows associated with minimum guarantees
-    # following death of PH
-    while (i <= minimum[1]) {
-
-        # Create mask for all policies with min guarantees for current period
-        # mask <- ifelse(i <= minimum, 1, 0)
-        cf[i] <- benefit[1]
-
-        # For flat-rate increases of benefits
-        benefit <- benefit * (1 + increase)
-
-        i <- i + 1
-    }
-
-    return(cf)
 }
-
-# For indexed benefits (e.g. inflation)
-# benefit <- benefit * (1 + index[i])
 
 # ---------------------------------------------------------------------------- #
 # ------------------------------- Life Annuity ------------------------------- #

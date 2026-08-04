@@ -56,11 +56,12 @@ create_policy_AP <- function(balance, init_age = 65, drawdown_rate = c(rep(0.05,
 #' @export create_policy_CA
 #' @examples
 #' ca <- create_policy_CA(c(60000, 1200), 0.04, 5)
-create_policy_CA <- function(benefit, increase, min) {
+create_policy_CA <- function(benefit, increase, min, defer) {
 
     if (min < 0)       stop("Invalid min: min > 0")
     if (sum(benefit < 0))   stop("Invalid benefit: benefit[i] > 0")
     if (increase < 0)  stop("Invalid increase: increase > 0")
+    if (increase < 0)  stop("Invalid defer: defer > 0")
 
     n_policies = length(benefit)
     # if (length(increase) != n_policies || length(min) != n_policies) {
@@ -85,7 +86,8 @@ create_policy_CA <- function(benefit, increase, min) {
                       state = c(state),
                       increase = c(increase),
                       benefit = c(benefit),
-                      min = c(min))
+                      min = c(min),
+                      defer = c(defer))
 
     return(pol)
 }

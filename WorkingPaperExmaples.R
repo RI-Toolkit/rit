@@ -7,7 +7,7 @@ load_all(export_all = FALSE)
 #######################
 # Example 1
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, n = 1000)
+cf_la <- simulate_cf(la)
 val_la <- value_policy(la, cf_la)
 
 
@@ -58,21 +58,21 @@ lx08 <- soa08Act@lx[initial_age + 1:length(soa08Act@lx)]
 surv <- get_px_from_lx(lx08)
 
 # Simulate ages at death based on survival probabilities
-death_ages <- get_ages_at_death(surv, max_years = 100, n_paths = 100)
+death_ages <- get_ages_at_death(surv, max_years = 100, n_paths = 1000)
 
 # Construct state matrix
 state <- construct_state_matrix(death_ages, max_years = 100)
 
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, n = 1000, state = state)
+cf_la <- simulate_cf(la, state = state)
 val_la <- value_policy(la, cf_la)
 
 
 #######################
 # Example 3
-sdf_ex3 <- list(sdf = t(matrix(rep((1+0.03)^-1, 100*100), ncol  = 100)))
+sdf_ex3 <- list(sdf = t(matrix(rep((1+0.03)^-1, 1000*100), ncol  = 1000)))
 la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, n = 1000, econ_var = sdf_ex3)
+cf_la <- simulate_cf(la, econ_var = sdf_ex3)
 val_la <- value_policy(la, cf_la)
 
 
@@ -149,7 +149,7 @@ ca_policy <- create_policy_CA(benefit = c(100, 150), increase = 0.02, min = 5)
 
 # 2. Simulate Cashflows
 # Note: When 'state' is not provided, simulate_cf() automatically uses the default Health State module parameters (the US HRS 3-state model)
-cf_ca <- simulate_cf(ca_policy, init_age = 65, n = 500)
+cf_ca <- simulate_cf(ca_policy, init_age = 65)
 
 # 3. Value the Policy
 val_ca <- value_policy(ca_policy, cf_ca)
@@ -218,16 +218,15 @@ calculatefee_RM <- function(value, LVR, trans_cost, seed) {
 # Product details
 value <- 600000
 LVR <- 0.64
-gamma <- 0.025
-seed <- 2026
+gamma <- 0.01
+seed <- 123
 N <- 1e3
 
 fair_margin <- calculatefee_RM(value = value, LVR = LVR, trans_cost = gamma, seed = seed)
 
 rm <- create_policy_RM(value = value, LVR = LVR, trans_cost = gamma, margin = fair_margin)
-cf_rm <- simulate_cf(rm, n = N)
+cf_rm <- simulate_cf(rm)
 val_rm <- value_policy(rm, cf_rm)
-
 
 
 #######################
@@ -259,3 +258,29 @@ plot(cumprod(surv_Q), type = "l", col = "red", lwd = 2, ylab = "Survival Probabi
 lines(cumprod(surv_P), col = "blue", lwd = 2, lty = 2)
 legend("topright", legend = c("Risk-Neutral (Q)", "Real-World (P)"), col = c("red", "blue"), lty = c(1, 2))
 
+
+
+#######################
+# Example 8 (Sherris and Wei (2021))
+# 1. Create the Care Annuity Policy Object
+# Benefits: 1000 (Healthy), 3000 (Disabled)
+ca_policy <- create_policy_CA(benefit = c(1000, 0, 3000, 3000), increase = 0, min = 0, defer = 3)
+sdf_ex8 <- list(sdf = t(matrix(rep((1+0.03)^-(1/12), 10000*12*100), ncol  = 10000)))
+trans_probs <- get_trans_probs(n_states=5, model_type='S', param_file=US_HRS_5, init_age=65, female=1, year = 2022, latent = 0, freq = 12)
+simulated_path <- simulate_health_state_paths(trans_probs, init_age=65, init_state = 0, cohort = 10000)
+
+# 2. Simulate Cashflows
+# Note: When 'state' is not provided, simulate_cf() automatically uses the default Health State module parameters (the US HRS 3-state model)
+cf_ca <- simulate_cf(ca_policy, init_age = 65, econ_var = sdf_ex8, state = simulated_path, n = 10000)
+
+# 3. Value the Policy
+val_ca <- value_policy(ca_policy, cf_ca)
+
+
+#############
+trans_probs_5 <- get_trans_probs(n_states = 5, model_type = 'T', param_file = US_HRS_5, init_age = 87, female = 0, year = 2022, latent = 0, freq = 12)
+lifetable_5 <- create_life_table(trans_probs_5, init_age = 87, init_state = 0, cohort = 100000)
+head(lifetable_5,3)
+simulated_path_5 <- simulate_health_state_paths(trans_probs_5, init_age = 87, init_state = 0, cohort = 10000)
+prob_plots(init_age = 87, init_state = 0, trans_probs = trans_probs_5, freq = 12)
+health_stats(n_states = 5, model_type = 'T', init_age = 87, init_state = 0, trans_probs = trans_probs_5, freq = 12)

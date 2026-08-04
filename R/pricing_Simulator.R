@@ -27,7 +27,7 @@
 #' @examples
 #' ap <- create_policy_AP(400000, 60000)
 #' cf <- simulate_cf(policy = ap, n = 1000)
-simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 100, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
+simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 1000, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
 
     # Set cash flow function based on input policy
     cf_func <- switch(policy$name[1], "AP" = cf_account_based_pension,
