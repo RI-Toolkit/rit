@@ -19,27 +19,29 @@
 #' Simulated state matrix via Health-State / Aggregate Mortality
 #' @param econ_var
 #' Simulated economic variables via Economic Scenario Generator
-#' @param econ_var
+#' @param cohort_death_probs
 #' Simulated death probabilities for cohort (for Pooled Annuity)
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #' @return
 #' Matrix of cash flow vectors for each simulated path
 #' @export simulate_cf
-#' @examples
-#' ap <- create_policy_AP(400000, 60000)
-#' cf <- simulate_cf(policy = ap, n = 1000)
 simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 1000, state = NULL, econ_var = NULL, cohort_death_probs = NULL) {
 
+    frequency = policy$frequency[1]
+
     # Set cash flow function based on input policy
-    cf_func <- switch(policy$name[1], "AP" = cf_account_based_pension,
-                                      "RM" = cf_reverse_mortgage,
-                                      "VA" = cf_variable_annuity,
-                                      "PA" = cf_pooled_annuity,
-                                      "CA" = cf_care_annuity,
-                                      "LA" = cf_life_annuity)
+    cf_func <- switch(policy$name[1],
+                      "AP" = cf_account_based_pension,
+                      "RM" = cf_reverse_mortgage,
+                      "VA" = cf_variable_annuity,
+                      "PA" = cf_pooled_annuity,
+                      "CA" = cf_care_annuity,
+                      "LA" = cf_life_annuity)
 
     # If not provided, get states for each path (matrix)
     if (is.null(state)) {
-        state <- get_state_simulation(policy, age = init_age, female = 1, seed, n)
+        state <- get_state_simulation(policy, age = init_age, female = 1, seed, n, frequency = frequency)
     }
 
     # Validate formatting of mortality state data
@@ -47,9 +49,11 @@ simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 1000, state = NU
         stop("Error: State matrix does not fit number of paths requested")
     }
 
+    period <- ncol(state)
+
     # If not provided, get economic data for each path (list of matrices)
     if (is.null(econ_var)) {
-        econ_var <- get_econ_simulation(state, n, seed)
+        econ_var <- get_econ_simulation(state, n, seed, frequency = frequency)
 
         econ_var <- list(stock=econ_var$market_index, infla=econ_var$inflation_index,
                          zcp3m=econ_var$zcp3m_yield, house=econ_var$home_index,
@@ -67,8 +71,8 @@ simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 1000, state = NU
         }
     }
 
-    # Get matrix of economic variables for each path
-    data <- get_policy_scenario(policy, age = init_age, female = 1, seed, n, period, econ_var, cohort_death_probs)
+    # Get matrix of economic variables for each path (passing frequency down)
+    data <- get_policy_scenario(policy, age = init_age, female = 1, seed, n, period, econ_var, cohort_death_probs, frequency = frequency)
 
     # Initialize output matrix
     cf <- matrix(nrow = n, ncol = ncol(state))
@@ -108,12 +112,14 @@ simulate_cf <- function(policy, init_age = 65, seed = NULL, n = 1000, state = NU
 #' Number of periods to simulate
 #' @param econ_var
 #' Simulated economic variables via Economic Scenario Generator
-#' @return
-#' Matrix of cash flow vectors for each simulated path
+#' @param death_probs
+#' Simulated death probabilities for cohort
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month".
 #'
 #' @return
 #' Data frame containing all variables generated using other modules
-get_policy_scenario <- function(policy, age, female, seed, n, period, econ_var, death_probs) {
+get_policy_scenario <- function(policy, age, female, seed, n, period, econ_var, death_probs, frequency) {
 
     var_sim <- econ_var
 
@@ -146,9 +152,9 @@ get_policy_scenario <- function(policy, age, female, seed, n, period, econ_var, 
 
     } else if (policy$name[1] == "PA") {
 
-        # Get all relevant health variables for pool
-        pool_r <- get_pool_realised(age, female, seed, n, policy$size, death_probs)
-        pool_e <- get_pool_expected(age, female, seed, policy$size, death_probs)
+        # Get all relevant health variables for pool (passing frequency down)
+        pool_r <- get_pool_realised(age, female, seed, n, policy$size, death_probs, frequency = frequency)
+        pool_e <- get_pool_expected(age, female, seed, policy$size, death_probs, frequency = frequency)
 
         # Get all relevant economic variables
         stock <- get_stock_return(var_sim)
@@ -197,32 +203,35 @@ get_policy_scenario <- function(policy, age, female, seed, n, period, econ_var, 
 
 }
 
-get_econ_simulation <- function(state, n, seed) {
+get_econ_simulation <- function(state, n, seed, frequency) {
     esg_names <- c("ASX200", "CPI", "home_index", "zcp3m_yield", "discount_factors")
     # Generalize naming to match generic pricing module inputs
     gen_names <- c("market_index", "inflation_index", "home_index", "zcp3m_yield", "discount_factors")
-
-    simulated_vars <- esg_var_simulator(ncol(state), n, frequency = 'year', return_sdf = TRUE, seed = seed)
+    simulated_vars <- esg_var_simulator(ncol(state), n, frequency = frequency, return_sdf = TRUE, seed = seed)
     filtered_vars <- simulated_vars[esg_names]
     names(filtered_vars) <- gen_names
     return(filtered_vars)
 }
 
-get_state_simulation <- function(policy, age, female, seed, n) {
+###############################################################################
+###### STATE SIMULATION FUNCTION
+
+get_state_simulation <- function(policy, age, female, seed, n, frequency) {
     if (policy$name[1] == "CA") {
         if (nrow(policy) == 2) {
-            probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age = age, closure_age = 110, female = 1)
+            probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age = age, closure_age = 110, female = 1, frequency = frequency)
         } else if (nrow(policy) == 4) {
-            probs <- get_trans_probs(5, 'S', rit::US_HRS_5, init_age = age, closure_age = 110, female = 1)
+            probs <- get_trans_probs(5, 'S', rit::US_HRS_5, init_age = age, closure_age = 110, female = 1, frequency = frequency)
         } else {
             stop("Error: CA policy object needs to have 2 or 4 rows")
         }
         return(simulate_health_state_paths(probs, init_age = age, closure_age = 110, cohort = n))
     } else if (policy$name[1] == "RM") {
-        probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age = age, closure_age = 110, female == 1)
+        probs <- get_trans_probs(3, 'S', rit::US_HRS_3, init_age = age, closure_age = 110, female = 1, frequency = frequency)
         return(simulate_health_state_paths(probs, init_age = age, closure_age = 110, cohort = n))
     } else {
-        return(get_aggregate_mortality(age, female, seed, n))
+        # Pass frequency down to get_aggregate_mortality
+        return(get_aggregate_mortality(age, female, seed, n, frequency = frequency))
     }
 }
 
@@ -248,14 +257,14 @@ get_state_simulation <- function(policy, age, female, seed, n) {
 
 
 
-get_aggregate_mortality <- function(age, female = 1, seed = 0, n = 1000) {
+get_aggregate_mortality <- function(age, female = 1, seed = 0, n = 1000, frequency) {
     utils::capture.output(suppressWarnings(
-        mortality <- sim_indiv_path(init_age = age, female, death_probs = NULL, closure_age = 110, n)
+        mortality <- sim_indiv_path(init_age = age, female = female, death_probs = NULL, closure_age = 110, n_sim = n, seed = seed, frequency = frequency)
     ))
     return(mortality)
 }
 
-get_pool_realised <- function(age, female = 1, seed = 0, n = 1000, cohort = 1000, death_probs = NULL) {
+get_pool_realised <- function(age, female = 1, seed = 0, n = 1000, cohort = 1000, death_probs = NULL, frequency) {
 
     closure_age <- 110
     if (!is.null(death_probs)) {
@@ -263,13 +272,13 @@ get_pool_realised <- function(age, female = 1, seed = 0, n = 1000, cohort = 1000
     }
 
     utils::capture.output(suppressWarnings(
-        pool <- sim_cohort_path_realised(age, female, death_probs = death_probs, closure_age = closure_age, cohort, n)
+        pool <- sim_cohort_path_realised(init_age = age, female = female, death_probs = death_probs, closure_age = closure_age, cohort = cohort, n_sim = n, seed = seed, frequency = frequency)
     ))
 
     return(pool)
 }
 
-get_pool_expected <- function(age, female = 1, seed = 0, cohort = 1000, death_probs = NULL) {
+get_pool_expected <- function(age, female = 1, seed = 0, cohort = 1000, death_probs = NULL, frequency) {
 
     closure_age <- 110
     if (!is.null(death_probs)) {
@@ -277,7 +286,7 @@ get_pool_expected <- function(age, female = 1, seed = 0, cohort = 1000, death_pr
     }
 
     utils::capture.output(suppressWarnings(
-        pool <- sim_cohort_path_expected(age, female, death_probs = death_probs, closure_age = closure_age, cohort)
+        pool <- sim_cohort_path_expected(init_age = age, female = female, death_probs = death_probs, closure_age = closure_age, cohort = cohort, frequency = frequency)
     ))
 
     return(pool)

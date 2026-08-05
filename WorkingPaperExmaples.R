@@ -6,66 +6,87 @@ load_all(export_all = FALSE)
 
 #######################
 # Example 1
-la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la)
+la <- create_policy_LA(benefit = 1, defer = 0, increase = 0, frequency = "year")
+cf_la <- simulate_cf(la, n = 10000, seed = 2026)
 val_la <- value_policy(la, cf_la)
 
 
 #######################
 # Example 2
+
 construct_state_matrix <- function(ages_at_death, max_years) {
     n_paths <- length(ages_at_death)
 
-    # Create matrix with all entries = -1 (i.e. PH is dead)
-    state <- matrix(rep(-1, n_paths*max_years), nrow=n_paths,
-                    ncol=max_years, byrow=TRUE)
+    # Create matrix with all entries = -1 (i.e. Policyholder is dead)
+    state <- matrix(-1, nrow = n_paths, ncol = max_years)
 
-    for (i in seq(1, n_paths)) {
-        # Set all entries in i'th row prior to death as 0 (i.e. PH is alive)
+    for (i in seq_len(n_paths)) {
         death_yr <- ages_at_death[i]
-        state[i, 1:death_yr] <- rep(0, death_yr)
+
+        # If they survived at least 1 full year, mark those completed years as 0 (Alive)
+        if (death_yr > 1) {
+            state[i, 1:(death_yr - 1)] <- 0
+        }
     }
     return(state)
 }
 
 get_ages_at_death <- function(surv_probs, max_years, n_paths) {
-    ages_at_death <- c()
+    ages_at_death <- numeric(n_paths)
     for (i in seq(1, n_paths)) {
         p <- stats::runif(length(surv_probs))
         lv <- min(which((p > surv_probs) == TRUE))
-        ages_at_death <- c(ages_at_death, lv)
+        ages_at_death[i] <- lv
     }
     return(ages_at_death)
 }
 
 get_px_from_lx <- function(lx) {
-    px <- lx
-    px[1] <- 1
-    for (i in seq(2, length(lx) - 1)) {
-        px[i] <- lx[i+1]/lx[i]
+    px <- numeric(length(lx))
+
+    # Correctly calculate the 1-year survival prob starting from the very first year
+    for (i in seq(1, length(lx) - 1)) {
+        px[i] <- lx[i+1] / lx[i]
     }
     px[length(lx)] <- 0
     return(px)
 }
 
-library(lifecontingencies); data(soaLt);
+library(lifecontingencies)
+data(soaLt)
+
 initial_age <- 65
-soa08Act <- with(soaLt, new("actuarialtable",interest=0.06,
-                            x = x,lx = Ix,name = "SOA2008"))
-lx08 <- soa08Act@lx[initial_age + 1:length(soa08Act@lx)]
+
+# Initialize actuarial table
+soa08Act <- with(soaLt, new("actuarialtable", interest=0.06,
+                            x = x, lx = Ix, name = "SOA2008"))
+lx08 <- soa08Act@lx[soa08Act@x >= initial_age]
 
 # Extract survival probabilities from soa0xAct
 surv <- get_px_from_lx(lx08)
 
 # Simulate ages at death based on survival probabilities
-death_ages <- get_ages_at_death(surv, max_years = 100, n_paths = 1000)
+N <- 10000
+death_ages <- get_ages_at_death(surv, max_years = 100, n_paths = N)
 
-# Construct state matrix
+# Construct state and SDF matrix
 state <- construct_state_matrix(death_ages, max_years = 100)
+sdf_ex2 <- list(sdf = t(matrix(rep((1+0.03)^-1, N*100), ncol  = N)))
 
-la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, state = state)
+# Policy valuation
+la <- create_policy_LA(benefit = 1, defer = 0, increase = 0, frequency = "year")
+cf_la <- simulate_cf(la, state = state, econ_var = sdf_ex2, n = N)
 val_la <- value_policy(la, cf_la)
+
+# Exact valuation
+exact_val <- axn(actuarialtable = soa08Act, x = 65, payment = "arrears", i = 0.03)
+
+# Check the difference
+simulated_mean <- val_la$stats$mean
+cat("--- Alignment Check ---\n")
+cat("Exact Annuity-Immediate APV:      ", exact_val, "\n")
+cat("Simulated Annuity-Immediate Mean: ", simulated_mean, "\n")
+cat("Difference:                       ", abs(exact_val - simulated_mean), "\n")
 
 
 #######################
@@ -145,16 +166,14 @@ fair_fee <- calculatefee_VA(prop = prop, length = length, value = value, seed = 
 # 1. Create the Care Annuity Policy Object
 # Benefits: 100 (Healthy), 150 (Disabled)
 # Increase: 2% p.a., Guarantee: 5 years
-ca_policy <- create_policy_CA(benefit = c(100, 150), increase = 0.02, min = 5)
+ca_policy <- create_policy_CA(benefit = c(1000, 3000), increase = 0, min = 0, defer = 3)
 
 # 2. Simulate Cashflows
 # Note: When 'state' is not provided, simulate_cf() automatically uses the default Health State module parameters (the US HRS 3-state model)
-cf_ca <- simulate_cf(ca_policy, init_age = 65)
+cf_ca <- simulate_cf(ca_policy, init_age = 65, freq = 12, n = 1000)
 
 # 3. Value the Policy
 val_ca <- value_policy(ca_policy, cf_ca)
-
-
 
 
 #######################
@@ -264,23 +283,27 @@ legend("topright", legend = c("Risk-Neutral (Q)", "Real-World (P)"), col = c("re
 # Example 8 (Sherris and Wei (2021))
 # 1. Create the Care Annuity Policy Object
 # Benefits: 1000 (Healthy), 3000 (Disabled)
-ca_policy <- create_policy_CA(benefit = c(1000, 0, 3000, 3000), increase = 0, min = 0, defer = 3)
+ca_policy <- create_policy_CA(benefit = c(1000, 0, 3000, 3000), increase = 0, min = 0, defer = 3, frequency = 'month')
 sdf_ex8 <- list(sdf = t(matrix(rep((1+0.03)^-(1/12), 10000*12*100), ncol  = 10000)))
-trans_probs <- get_trans_probs(n_states=5, model_type='S', param_file=US_HRS_5, init_age=65, female=1, year = 2022, latent = 0, freq = 12)
-simulated_path <- simulate_health_state_paths(trans_probs, init_age=65, init_state = 0, cohort = 10000)
+trans_probs <- get_trans_probs(n_states=5, model_type='S', param_file=US_HRS_5, init_age=65, female=1, year = 2022, latent = 0, frequency = 'month')
+simulated_path <- simulate_health_state_paths(trans_probs, init_age=65, init_state = 0, cohort = 100)
 
 # 2. Simulate Cashflows
 # Note: When 'state' is not provided, simulate_cf() automatically uses the default Health State module parameters (the US HRS 3-state model)
-cf_ca <- simulate_cf(ca_policy, init_age = 65, econ_var = sdf_ex8, state = simulated_path, n = 10000)
+cf_ca <- simulate_cf(ca_policy, init_age = 65, econ_var = sdf_ex8, n = 100, state = simulated_path)
 
 # 3. Value the Policy
 val_ca <- value_policy(ca_policy, cf_ca)
 
 
 #############
-trans_probs_5 <- get_trans_probs(n_states = 5, model_type = 'T', param_file = US_HRS_5, init_age = 87, female = 0, year = 2022, latent = 0, freq = 12)
+trans_probs_5 <- get_trans_probs(n_states = 5, model_type = 'T', param_file = US_HRS_5, init_age = 87, female = 0, year = 2022, latent = 0, frequency = 'year')
 lifetable_5 <- create_life_table(trans_probs_5, init_age = 87, init_state = 0, cohort = 100000)
 head(lifetable_5,3)
 simulated_path_5 <- simulate_health_state_paths(trans_probs_5, init_age = 87, init_state = 0, cohort = 10000)
-prob_plots(init_age = 87, init_state = 0, trans_probs = trans_probs_5, freq = 12)
-health_stats(n_states = 5, model_type = 'T', init_age = 87, init_state = 0, trans_probs = trans_probs_5, freq = 12)
+prob_plots(init_age = 87, init_state = 0, trans_probs = trans_probs_5, frequency = 'year')
+health_stats(n_states = 5, model_type = 'T', init_age = 87, init_state = 0, trans_probs = trans_probs_5, frequency = 'year')
+
+
+
+

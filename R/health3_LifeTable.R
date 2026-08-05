@@ -39,7 +39,7 @@ health3_create_life_table <- function(trans_probs, init_age, closure_age, init_s
     num_periods <- num_transitions + 1
 
     # Calculate fractional year step dynamically based on the number of matrices provided
-    step <- (closure_age - init_age) / num_transitions
+    step <- (closure_age - init_age) / (num_transitions - 1)
 
     # Pre-allocate matrix for maximum performance during Monte Carlo loops
     life_table <- matrix(0, nrow = num_periods, ncol = 10)
@@ -106,15 +106,15 @@ health3_create_life_table <- function(trans_probs, init_age, closure_age, init_s
 #' cohort size of lifetable
 #' @param mean
 #' FALSE to return list of lifetables, TRUE to return expected lifetable
-#' @param freq
-#' integer denoting the number of transition steps per year
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' Dataframe containing life table
 #'
 #' @noRd
 #'
-health3_simulate_life_table <- function(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean, freq = 1) {
+health3_simulate_life_table <- function(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean, frequency = "year") {
     # flagging errors
     if (as.integer(n_sim) != n_sim | n_sim <= 0) {
         stop('n_sim must be a positive integer')
@@ -132,12 +132,23 @@ health3_simulate_life_table <- function(init_age, closure_age, female, year, par
         stop('cohort must be a positive integer')
     }
 
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
+
     # Pre-allocate list to drastically improve loop performance
     life_tables <- vector("list", n_sim)
 
     for (i in seq_len(n_sim)) {
         # Pass freq down to correctly calculate fractional steps
-        TP <- health3_get_trans_probs('F', param_file, init_age, closure_age, female, year, freq)
+        TP <- health3_get_trans_probs('F', param_file, init_age, closure_age, female, year, frequency)
         LT <- health3_create_life_table(TP, init_age, closure_age, init_state, cohort)
         life_tables[[i]] <- LT
     }

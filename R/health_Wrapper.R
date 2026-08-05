@@ -21,8 +21,8 @@
 #' the wave index = (interview year - 1998)/2 + 1
 #' @param latent
 #' initial value of latent factor, normally take the value 0
-#' @param freq
-#' integer denoting the number of transition steps per year (default is 1 for annual)
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' list of transition probability matrices
@@ -33,7 +33,7 @@
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, wave_index = 8,
 #' latent = 0, freq = 12)
 #'
-get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, latent = 0, freq) {
+get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, latent = 0, frequency) {
 
     if (n_states == 5) {
         # Calculate wave_index directly from year (continuous allowed)
@@ -41,11 +41,11 @@ get_trans_probs <- function(n_states, model_type, param_file, init_age, closure_
     }
 
     if (n_states == 3) {
-        return(health3_get_trans_probs(model_type, param_file, init_age, closure_age, female, year, freq))
+        return(health3_get_trans_probs(model_type, param_file, init_age, closure_age, female, year, frequency))
     }
 
     if (n_states == 5) {
-        return(health5_get_trans_probs(model_type, param_file, init_age, closure_age, female, wave_index, latent, freq))
+        return(health5_get_trans_probs(model_type, param_file, init_age, closure_age, female, wave_index, latent, frequency))
     }
 
     stop('invalid n_states')
@@ -127,8 +127,8 @@ create_life_table <- function(trans_probs, init_age, closure_age = 110, init_sta
 #' number of people at the beginning of the life table
 #' @param mean
 #' TRUE to return expected life table, FALSE to return all simulated life tables
-#' @param freq
-#' integer denoting the number of transition steps per year
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' list of life tables (default) or expected life table (mean == TRUE)
@@ -139,16 +139,16 @@ create_life_table <- function(trans_probs, init_age, closure_age = 110, init_sta
 #' param_file=US_HRS_5, init_age=65, female=0, year = 2012, init_state = 0,
 #' wave_index = 8,latent=0,n_sim=100,cohort=100,mean=FALSE, freq = 1)
 #'
-simulate_life_table <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, init_state = 0, wave_index = 8, latent=0, n_sim=100, cohort=100000, mean=FALSE, freq) {
+simulate_life_table <- function(n_states, model_type, param_file, init_age, closure_age = 110, female, year = 2012, init_state = 0, wave_index = 8, latent=0, n_sim=100, cohort=100000, mean=FALSE, frequency) {
     if (model_type != 'F') {
         stop('use frailty model to simulate lifetables')
     }
     if (n_states == 3) {
-        return(health3_simulate_life_table(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean, freq))
+        return(health3_simulate_life_table(init_age, closure_age, female, year, param_file, init_state, n_sim, cohort, mean, frequency))
     }
 
     if (n_states == 5) {
-        return(health5_simulate_life_table(model_type, param_file, female, wave_index, latent, init_age, closure_age, init_state, n_sim, cohort, mean, freq))
+        return(health5_simulate_life_table(model_type, param_file, female, wave_index, latent, init_age, closure_age, init_state, n_sim, cohort, mean, frequency))
     }
 
     stop('invalid n_states')
@@ -215,7 +215,8 @@ simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 110
 #' for 5-state model: 0 for H state, 1 for M state, 2 for D state, 3 for MD state
 #' @param trans_probs
 #' a list of transition probability matrices, preferably generated from \code{\link[tshm]{get_trans_probs}}.
-#'
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #' @return
 #' line plot denoting Probability of surviving to each different state
 #'
@@ -228,14 +229,14 @@ simulate_health_state_paths <- function(trans_probs, init_age, closure_age = 110
 #' latent = 0)
 #' prob_plots(init_state=0, init_age=65, trans_probs=trans_probs)
 #'
-prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs, freq) {
+prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs, frequency) {
 
     if (length(trans_probs[[1]][1,]) == 3) {
-        return(health3_prob_plots(init_age, closure_age, init_state, trans_probs, freq))
+        return(health3_prob_plots(init_age, closure_age, init_state, trans_probs, frequency))
     }
 
     if (length(trans_probs[[1]][1,]) == 5) {
-        return(health5_prob_plots(init_age, closure_age, init_state, trans_probs, freq))
+        return(health5_prob_plots(init_age, closure_age, init_state, trans_probs, frequency))
     }
 
     stop('invalid dimensions: trans_probs')
@@ -293,8 +294,8 @@ prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs, fr
 #' @param n
 #' integer denoting number of unique latent factor simulations
 #'
-#' @param freq
-#' integer denoting the number of transition steps per year
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' dataframe output containing mean and standard deviation of different statistics
@@ -302,12 +303,12 @@ prob_plots <- function (init_age, closure_age = 110, init_state, trans_probs, fr
 #' @export
 #'
 #' @examples example
-health_stats <- function (model_type, n_states, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, freq){
+health_stats <- function (model_type, n_states, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, frequency){
     if (n_states == 3) {
-        return(health3_survival_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, param_file, n, freq))
+        return(health3_survival_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, param_file, n, frequency))
     }
     if (n_states == 5) {
-        return(health5_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, wave_index, latent, param_file, n, freq))
+        return(health5_stats(model_type, init_age, closure_age, init_state, trans_probs, simulated_path, female, year, wave_index, latent, param_file, n, frequency))
     }
     stop('invalid n_states')
 }

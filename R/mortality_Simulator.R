@@ -16,15 +16,18 @@
 #' number of path simulations
 #' @param seed
 #' integer to be used as the seed for simulation
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
+#'
 #' @return
 #' a matrix where each row represents an individual's dead (-1) or alive (0) status
 #' at each age
 #'
 #' @export
 #'
-sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age = 110, n_sim = 10000, seed = NULL) {
+sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age = 110, n_sim = 10000, seed = NULL, frequency = "year") {
 
-# Flagging errors ---------------------------------------------------------
+    # Flagging errors ---------------------------------------------------------
 
     # init_age
     if (init_age < 55 | init_age > closure_age) {
@@ -38,6 +41,17 @@ sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age
     # female
     if (female != 1 & female != 0) {
         stop("female must be 1 or 0")
+    }
+
+    # frequency mapping
+    if (frequency == "year") {
+        freq_num <- 1
+    } else if (frequency == "quarter") {
+        freq_num <- 4
+    } else if (frequency == "month") {
+        freq_num <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
     }
 
     # death_probs
@@ -67,7 +81,7 @@ sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age
         stop('number of simulations must be a positive integer')
     }
 
-# Implementation ----------------------------------------------------------
+    # Implementation ----------------------------------------------------------
 
     if (!is.null(seed)) {
         set.seed(seed)
@@ -78,19 +92,30 @@ sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age
         death_probs <- generate_default_qx(init_age, female, closure_age)
     }
 
-    # create empty matrix of simulated paths
-    sim_path <- matrix(NA, nrow = n_sim, ncol = closure_age - init_age+2)
-    # initialise as health
-    sim_path[,1] <- 0
-    colnames(sim_path) <- as.character(init_age:(closure_age + 1))
+    # Convert annual probabilities to fractional probabilities (constant force of mortality)
+    fractional_surv_probs <- (1 - death_probs)^(1 / freq_num)
+    fractional_death_probs <- rep(1 - fractional_surv_probs, each = freq_num)
 
-    # qx should be vector of length (closure_age - init_age + 1)
+    # Calculate the exact number of steps
+    n_steps <- length(fractional_death_probs)
+
+    # create empty matrix of simulated paths
+    sim_path <- matrix(NA, nrow = n_sim, ncol = n_steps + 1)
+
+    # initialise as healthy
+    sim_path[,1] <- 0
+
+    # Construct sequence using length.out to prevent floating-point drift
+    colnames(sim_path) <- as.character(seq(init_age, closure_age + 1, length.out = n_steps + 1))
+
+    # simulate transitions
     for (i in 2:ncol(sim_path)) {
-        # Simulate TRUE/FALSE vector indicating if individual has died
-        # during this transition
-        sim_death <- (stats::runif(n_sim) <= death_probs[i - 1])
+        # Simulate TRUE/FALSE vector indicating if individual has died during this transition
+        sim_death <- (stats::runif(n_sim) <= fractional_death_probs[i - 1])
+
         # Encoding to 0 for alive and -1 for dead
         sim_path[, i] <- -as.numeric(sim_death)
+
         # transitions cannot occur for dead individuals
         sim_path[sim_path[, i-1] == -1, i] <- -1
     }
@@ -120,6 +145,8 @@ sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age
 #' number of path simulations
 #' @param seed
 #' integer to be used as the seed for simulation
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' a matrix where each row represents the number of individuals still alive
@@ -127,8 +154,8 @@ sim_indiv_path <- function(init_age, female = 1, death_probs = NULL, closure_age
 #' @export
 #'
 sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
-                                   closure_age = 130, cohort = 1000, n_sim = 10000, seed = NULL) {
-# Flagging errors ---------------------------------------------------------
+                                     closure_age = 130, cohort = 1000, n_sim = 10000, seed = NULL, frequency = "year") {
+    # Flagging errors ---------------------------------------------------------
 
     # init_age
     if (init_age < 55 | init_age > closure_age) {
@@ -142,6 +169,17 @@ sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
     # female
     if (female != 1 & female != 0) {
         stop("female must be 1 or 0")
+    }
+
+    # frequency mapping
+    if (frequency == "year") {
+        freq_num <- 1
+    } else if (frequency == "quarter") {
+        freq_num <- 4
+    } else if (frequency == "month") {
+        freq_num <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
     }
 
     # death_probs
@@ -177,7 +215,7 @@ sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
     }
 
 
-# Implementation ----------------------------------------------------------
+    # Implementation ----------------------------------------------------------
 
     if (!is.null(seed)) {
         set.seed(seed)
@@ -188,9 +226,16 @@ sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
         death_probs <- generate_default_qx(init_age, female, closure_age)
     }
 
+    # Convert annual probabilities to fractional probabilities (constant force of mortality)
+    fractional_surv_probs <- (1 - death_probs)^(1 / freq_num)
+    fractional_death_probs <- rep(1 - fractional_surv_probs, each = freq_num)
+
+    # Calculate the exact number of steps
+    n_steps <- length(fractional_death_probs)
+
     # empty matrix of simulated paths
-    sim_path <- matrix(NA, nrow = n_sim, ncol = closure_age - init_age+2)
-    colnames(sim_path) <- as.character(init_age:(closure_age + 1))
+    sim_path <- matrix(NA, nrow = n_sim, ncol = n_steps + 1)
+    colnames(sim_path) <- as.character(seq(init_age, closure_age + 1, length.out = n_steps + 1))
 
     # initialise cohort size
     sim_path[, 1] = cohort
@@ -198,12 +243,11 @@ sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
         for (j in 2:ncol(sim_path)) {
             still_alive <- sim_path[i, j - 1]
             if (still_alive) {
-                # simulate with 1-year survival probability
-                sim_path[i, j] <- round(stats::rbinom(1, still_alive, 1 - death_probs[j - 1]))
+                # simulate with fractional survival probability
+                sim_path[i, j] <- round(stats::rbinom(1, still_alive, 1 - fractional_death_probs[j - 1]))
             } else {
                 sim_path[i, j] <- 0
             }
-
         }
     }
 
@@ -227,15 +271,17 @@ sim_cohort_path_realised <- function(init_age, female = 1, death_probs = NULL,
 #' maximum life span
 #' @param cohort
 #' initial cohort size
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' vector of expected number of individuals still alive from a given cohort at each age
 #' @export
 #'
 sim_cohort_path_expected <- function(init_age, female = 1, death_probs = NULL,
-                                     closure_age = 130, cohort = 1000) {
+                                     closure_age = 130, cohort = 1000, frequency = "year") {
 
-# Flagging errors ---------------------------------------------------------
+    # Flagging errors ---------------------------------------------------------
 
     # init_age
     if (init_age < 55 | init_age > closure_age) {
@@ -249,6 +295,17 @@ sim_cohort_path_expected <- function(init_age, female = 1, death_probs = NULL,
     # female
     if (female != 1 & female != 0) {
         stop("female must be 1 or 0")
+    }
+
+    # frequency mapping
+    if (frequency == "year") {
+        freq_num <- 1
+    } else if (frequency == "quarter") {
+        freq_num <- 4
+    } else if (frequency == "month") {
+        freq_num <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
     }
 
     # death_probs
@@ -280,20 +337,24 @@ sim_cohort_path_expected <- function(init_age, female = 1, death_probs = NULL,
     }
 
 
-# Implementation ----------------------------------------------------------
+    # Implementation ----------------------------------------------------------
 
     # Generating default death probabilities for males and females if required
     if (is.null(death_probs)) {
         death_probs <- generate_default_qx(init_age, female, closure_age)
     }
 
+    # Convert annual probabilities to fractional probabilities (constant force of mortality)
+    fractional_surv_probs <- (1 - death_probs)^(1 / freq_num)
+    fractional_death_probs <- rep(1 - fractional_surv_probs, each = freq_num)
+
+    n_steps <- length(fractional_death_probs)
+
     # cumulative survival probabilities
-    cum_surv_probs <- cumprod(c(1, 1 - death_probs))
-    names(cum_surv_probs) <- as.character(init_age:(closure_age + 1))
+    cum_surv_probs <- cumprod(c(1, 1 - fractional_death_probs))
+    names(cum_surv_probs) <- as.character(seq(init_age, closure_age + 1, length.out = n_steps + 1))
 
     sim_path <- round(cohort * cum_surv_probs)
 
     return(sim_path)
 }
-
-

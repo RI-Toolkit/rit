@@ -159,8 +159,8 @@ health5_create_life_table <- function(list_trans_probs, init_age, closure_age, i
 #' number of people at the beginning of the life table
 #' @param mean
 #' TRUE to return expected life table, FALSE to return all simulated life tables
-#' @param freq
-#' integer denoting the number of transition steps per year
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month".
 #'
 #' @return
 #' a list of n_sim number of life table matrices when mean=FALSE
@@ -168,7 +168,18 @@ health5_create_life_table <- function(list_trans_probs, init_age, closure_age, i
 #'
 #' @noRd
 #'
-health5_simulate_life_table <- function(model_type, param_file, female, wave_index, latent, init_age, closure_age, init_state, n_sim, cohort, mean, freq) {
+health5_simulate_life_table <- function(model_type, param_file, female, wave_index, latent, init_age, closure_age, init_state, n_sim, cohort, mean, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     if (model_type != 'F') {
         stop('use frailty model to simulate lifetables')
@@ -178,7 +189,7 @@ health5_simulate_life_table <- function(model_type, param_file, female, wave_ind
     state_status_full <- vector("list", n_sim)
 
     for (i in seq_len(n_sim)) {
-        list_trans_probs <- health5_get_trans_probs(model_type, param_file, init_age, closure_age, female, wave_index, latent, freq)
+        list_trans_probs <- health5_get_trans_probs(model_type, param_file, init_age, closure_age, female, wave_index, latent, frequency)
         state_status_full[[i]] <- health5_create_life_table(list_trans_probs, init_age, closure_age, init_state, cohort)
     }
 

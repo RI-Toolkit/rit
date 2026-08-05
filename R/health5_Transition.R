@@ -13,14 +13,26 @@
 #' the wave index = (interview year - 1998)/2 + 1
 #' @param latent
 #' initial value of latent factor, normally take the value 0
-#' @param freq
-#' integer denoting the number of transition steps per year (e.g., 12 for monthly)
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month".
 #' @return
 #' 12 times 1 vector of transition rates for the 12 types of transitions
 #'
 #' @noRd
 #'
-health5_get_trans_rates = function(model_type, param_file, age, female, wave_index, latent, freq){
+health5_get_trans_rates = function(model_type, param_file, age, female, wave_index, latent, frequency){
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
+
     # Calculate fractional year step internally
     step <- 1 / freq
 
@@ -71,8 +83,8 @@ health5_get_trans_rates = function(model_type, param_file, age, female, wave_ind
 #' the wave index = (interview year - 1998)/2 + 1
 #' @param latent
 #' initial value of latent factor, normally take the value 0
-#' @param freq
-#' integer denoting the number of transition steps per year
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month".
 #'
 #' @return
 #' 5 times 5 matrix of transitions probabilities, the states are H M D MD Dead
@@ -81,10 +93,10 @@ health5_get_trans_rates = function(model_type, param_file, age, female, wave_ind
 #'
 #' @noRd
 #'
-health5_get_trans_probs_at_age = function(model_type, param_file, age, female, wave_index, latent, freq){
+health5_get_trans_probs_at_age = function(model_type, param_file, age, female, wave_index, latent, frequency){
 
     # Pass freq down to the rates function
-    trans_rate = health5_get_trans_rates(model_type, param_file, age, female, wave_index, latent, freq)
+    trans_rate = health5_get_trans_rates(model_type, param_file, age, female, wave_index, latent, frequency)
 
     trans_rate_matrix = rbind(
         c(-sum(trans_rate[1:4]), trans_rate[1], trans_rate[2], trans_rate[3], trans_rate[4]),
@@ -117,18 +129,25 @@ health5_get_trans_probs_at_age = function(model_type, param_file, age, female, w
 #' the wave index
 #' @param latent
 #' initial value of latent factor, normally take the value 0
-#' @param freq
-#' integer denoting the number of transition steps per year (e.g., 12 for monthly, 1 for annual)
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month".
 #'
 #' @return a list of 5 times 5 transition probability matrices
 #' @import readxl expm
 #'
 #' @noRd
 #'
-health5_get_trans_probs = function(model_type, param_file, init_age, closure_age, female, wave_index, latent, freq = 12){
+health5_get_trans_probs = function(model_type, param_file, init_age, closure_age, female, wave_index, latent, frequency){
 
-    if (freq <= 0 | freq != floor(freq)) {
-        stop('frequency must be a positive integer')
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
     }
 
     step <- 1 / freq
@@ -146,7 +165,7 @@ health5_get_trans_probs = function(model_type, param_file, init_age, closure_age
 
         # calculate transition probability matrix for each fractional age step, passing freq down
         trans_prob_matrix[[i]] = health5_get_trans_probs_at_age(
-            model_type, param_file, a, female, current_wave_index, latent, freq
+            model_type, param_file, a, female, current_wave_index, latent, frequency
         )
 
         if (model_type == 'F'){

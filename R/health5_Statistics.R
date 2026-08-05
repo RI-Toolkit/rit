@@ -13,12 +13,23 @@
 #' @param latent initial value of latent factor
 #' @param param_file parameter file
 #' @param n integer denoting number of unique latent factor simulations
-#' @param freq integer denoting the number of transition steps per year
+#' @param frequency string selecting the simulation frequency: "year", "quarter", or "month".
 #'
 #' @return a column that consists the first time leaving or entering the state
 #'
 #' @export
-health5_first_time_stats <- function(model_type, state, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, freq) {
+health5_first_time_stats <- function(model_type, state, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     # Internal vectorized helper
     calc_first_time <- function(SP) {
@@ -63,7 +74,18 @@ health5_first_time_stats <- function(model_type, state, init_age, closure_age, i
 #'
 #' @param state 0=H, 1=M, 2=D, 3=MD, -1=Dead, 4=Alive (not Dead)
 #' @export
-health5_total_time_stats <- function(model_type, state, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, freq) {
+health5_total_time_stats <- function(model_type, state, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     # Internal vectorized helper
     calc_total_time <- function(SP) {
@@ -120,7 +142,9 @@ health5_stats_produce <- function(input) {
     output <- matrix(nrow = 1, ncol = 2)
     colnames(output) <- c('expected_value', 'st_dev')
     output[1] <- mean(input, na.rm = TRUE)
-    output[2] <- stats::sd(input, na.rm = TRUE)
+    # Divide standard deviation by sqrt(n) for valid non-NA values
+    n_valid <- sum(!is.na(input))
+    output[2] <- stats::sd(input, na.rm = TRUE) / sqrt(n_valid)
     return(output)
 }
 
@@ -130,7 +154,18 @@ health5_stats_produce <- function(input) {
 #' Produces statistics for 5-state model.
 #'
 #' @noRd
-health5_stats <- function(model_type, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, freq) {
+health5_stats <- function(model_type, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, wave_index = NULL, latent = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     # Inline evaluation logic to prevent re-simulating the paths over and over
     calc_first <- function(SP, st) {
@@ -208,31 +243,73 @@ health5_stats <- function(model_type, init_age, closure_age, init_state, trans_p
     years_disability <- years_D + years_MD
     years_illness <- years_M + years_MD
 
-    # Format the return structure based on the initial state
+    n_tot <- length(total_life)
+
+    # Format the return structure based on the initial state and calculate SE
     if (init_state == 0) {
         means <- c(mean(total_life), mean(years_H), mean(years_M), mean(years_D), mean(years_MD), mean(years_disability), mean(years_illness), mean(first_H, na.rm=TRUE), mean(first_M, na.rm=TRUE), mean(first_D, na.rm=TRUE), mean(first_MD, na.rm=TRUE))
-        sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M), stats::sd(years_D), stats::sd(years_MD), stats::sd(years_disability), stats::sd(years_illness), stats::sd(first_H, na.rm=TRUE), stats::sd(first_M, na.rm=TRUE), stats::sd(first_D, na.rm=TRUE), stats::sd(first_MD, na.rm=TRUE))
+        sds <- c(
+            stats::sd(total_life) / sqrt(n_tot),
+            stats::sd(years_H) / sqrt(n_tot),
+            stats::sd(years_M) / sqrt(n_tot),
+            stats::sd(years_D) / sqrt(n_tot),
+            stats::sd(years_MD) / sqrt(n_tot),
+            stats::sd(years_disability) / sqrt(n_tot),
+            stats::sd(years_illness) / sqrt(n_tot),
+            stats::sd(first_H, na.rm=TRUE) / sqrt(sum(!is.na(first_H))),
+            stats::sd(first_M, na.rm=TRUE) / sqrt(sum(!is.na(first_M))),
+            stats::sd(first_D, na.rm=TRUE) / sqrt(sum(!is.na(first_D))),
+            stats::sd(first_MD, na.rm=TRUE) / sqrt(sum(!is.na(first_MD)))
+        )
         stats_df <- data.frame(
             'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD', 'Mean years with disability','Mean years with illness','First time leaving state H','First time entering state M', 'First time entering state D', 'First time entering state MD'),
             'mean' = means, 's.dev' = sds
         )
     } else if (init_state == 1) {
         means <- c(mean(total_life), mean(years_H), mean(years_M), mean(years_D), mean(years_MD), mean(years_disability), mean(years_illness), mean(first_MD, na.rm=TRUE))
-        sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M), stats::sd(years_D), stats::sd(years_MD), stats::sd(years_disability), stats::sd(years_illness), stats::sd(first_MD, na.rm=TRUE))
+        sds <- c(
+            stats::sd(total_life) / sqrt(n_tot),
+            stats::sd(years_H) / sqrt(n_tot),
+            stats::sd(years_M) / sqrt(n_tot),
+            stats::sd(years_D) / sqrt(n_tot),
+            stats::sd(years_MD) / sqrt(n_tot),
+            stats::sd(years_disability) / sqrt(n_tot),
+            stats::sd(years_illness) / sqrt(n_tot),
+            stats::sd(first_MD, na.rm=TRUE) / sqrt(sum(!is.na(first_MD)))
+        )
         stats_df <- data.frame(
             'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD', 'Mean years with disability','Mean years with illness','First time entering state MD'),
             'mean' = means, 's.dev' = sds
         )
     } else if (init_state == 2) {
         means <- c(mean(total_life), mean(years_H), mean(years_M), mean(years_D), mean(years_MD), mean(years_disability), mean(years_illness), mean(first_M, na.rm=TRUE), mean(first_MD, na.rm=TRUE))
-        sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M), stats::sd(years_D), stats::sd(years_MD), stats::sd(years_disability), stats::sd(years_illness), stats::sd(first_M, na.rm=TRUE), stats::sd(first_MD, na.rm=TRUE))
+        sds <- c(
+            stats::sd(total_life) / sqrt(n_tot),
+            stats::sd(years_H) / sqrt(n_tot),
+            stats::sd(years_M) / sqrt(n_tot),
+            stats::sd(years_D) / sqrt(n_tot),
+            stats::sd(years_MD) / sqrt(n_tot),
+            stats::sd(years_disability) / sqrt(n_tot),
+            stats::sd(years_illness) / sqrt(n_tot),
+            stats::sd(first_M, na.rm=TRUE) / sqrt(sum(!is.na(first_M))),
+            stats::sd(first_MD, na.rm=TRUE) / sqrt(sum(!is.na(first_MD)))
+        )
         stats_df <- data.frame(
             'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD', 'Mean years with disability','Mean years with illness','First time entering state M', 'First time entering state MD'),
             'mean' = means, 's.dev' = sds
         )
     } else if (init_state == 3) {
         means <- c(mean(total_life), mean(years_H), mean(years_M), mean(years_D), mean(years_MD), mean(years_disability), mean(years_illness), mean(first_M, na.rm=TRUE))
-        sds <- c(stats::sd(total_life), stats::sd(years_H), stats::sd(years_M), stats::sd(years_D), stats::sd(years_MD), stats::sd(years_disability), stats::sd(years_illness), stats::sd(first_M, na.rm=TRUE))
+        sds <- c(
+            stats::sd(total_life) / sqrt(n_tot),
+            stats::sd(years_H) / sqrt(n_tot),
+            stats::sd(years_M) / sqrt(n_tot),
+            stats::sd(years_D) / sqrt(n_tot),
+            stats::sd(years_MD) / sqrt(n_tot),
+            stats::sd(years_disability) / sqrt(n_tot),
+            stats::sd(years_illness) / sqrt(n_tot),
+            stats::sd(first_M, na.rm=TRUE) / sqrt(sum(!is.na(first_M)))
+        )
         stats_df <- data.frame(
             'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state M','Mean years in state D','Mean years in state MD', 'Mean years with disability','Mean years with illness','First time entering state M'),
             'mean' = means, 's.dev' = sds

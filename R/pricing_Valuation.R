@@ -27,15 +27,17 @@ value_policy <- function(policy, cashflows, seed = NULL) {
     if (nrow(cashflows$cf) > nrow(cashflows$sdf) || ncol(cashflows$cf) > ncol(cashflows$sdf))
         stop("Invalid Cashflow Object: Inconsistent dimensions")
 
+    frequency <- policy$frequency[1]
+
     # Calculate price of policy for each path
-    cf_data <- get_path_prices(cashflows)
+    cf_data <- get_path_prices(cashflows, frequency = frequency)
     dcf <- cf_data$dcf
     values <- cf_data$values
 
     # Produce statistics and plots for policy price
     stat <- get_price_stats(values)
     dist <- plot_distribution(values)
-    conv <- plot_convergence(values, seed)
+    conv <- plot_convergence(values)
     scat <- plot_scatter(values)
 
     # Maps 'colname' attribute to formatted title for output text
@@ -65,7 +67,8 @@ value_policy <- function(policy, cashflows, seed = NULL) {
         s_fee       = "Surr. Fee   ",
         margin      = "Margin      ",
         age         = "Age         ",
-        rate        = "Drawdown rate"
+        rate        = "Drawdown rate",
+        frequency   = "Frequency   "
     )
 
     # Format introduction for output text
@@ -122,7 +125,7 @@ value_policy <- function(policy, cashflows, seed = NULL) {
 ###### Economic Scenario Generator Module
 
 get_sdf <- function(n = 100, period = 100) {
-    var_sim <- esg_var_simulator(period, n, frequency = 'year', return_sdf = TRUE)
+    var_sim <- esg_var_simulator(period, n, frequency = frequency, return_sdf = TRUE)
     sdf <- var_sim$discount_factors
     return(t(unname(sdf)))
 }
@@ -139,7 +142,7 @@ get_sdf <- function(n = 100, period = 100) {
 #' Matrix of simulated cashflow paths
 #' @return
 #' Policy price
-get_path_prices <- function(cashflows) {
+get_path_prices <- function(cashflows, frequency) {
 
     # Extract matrix dimensions
     n_paths <- nrow(cashflows$cf)
@@ -149,7 +152,7 @@ get_path_prices <- function(cashflows) {
     if (!is.null(cashflows$sdf)) {
         sdf <- cashflows$sdf[1:n_paths, 1:periods]
     } else {
-        sdf <- get_sdf(nrow(cashflows$cf), ncol(cashflows$cf))
+        sdf <- get_sdf(nrow(cashflows$cf), ncol(cashflows$cf), frequency = frequency)
     }
 
     # Calculate cumulative product of factors
@@ -199,38 +202,39 @@ get_price_stats <- function(prices) {
 
 #' Plots Convergence of Cashflows
 #'
-#' Plots a convergence value for a provided set of cashflows
+#' Plots the cumulative sample mean for a provided set of cashflows
 #'
 #' @name plot_convergence
 #' @param prices
-#' Matrix of simulated cashflow paths
-#' @param seed
-#' Seed choice for random sampling
+#' Vector or Matrix of simulated cashflow paths
 #' @return
 #' Convergence Plot
-plot_convergence <- function(prices, seed = 9999) {
+plot_convergence <- function(prices) {
 
-    # Create break point for 100 points
-    breaks <- seq((length(prices))/100, length(prices), (length(prices))/100)
-
-    # If less than 100 points, break point for each price
-    if (length(prices) < 100) breaks <- seq(1, length(prices))
-
-    # Set seed value for random sampling
-    set.seed(seed)
-
-    # Record cumulative mean up until each break point
-    expected <- rep(0, length(breaks))
-    for (i in seq(1, length(breaks))) {
-        expected[i] <- mean(sample(prices, size = breaks[i]), replace = F)
+    # Create integer break points for up to 100 points
+    if (length(prices) < 100) {
+        breaks <- seq_along(prices)
+    } else {
+        # Use floor to guarantee exactly 100 integer breakpoints
+        breaks <- floor(seq(length(prices) / 100, length(prices), length.out = 100))
     }
+
+    # Calculate the running cumulative mean as observations increase
+    cumulative_mean <- cumsum(prices) / seq_along(prices)
+
+    # Extract the cumulative mean at the specified break points
+    expected <- cumulative_mean[breaks]
 
     # Format plot
     title <- paste("Convergence of Policy Valuation (", length(prices),
                    " paths)", sep = "")
-    plot(x = breaks, y = expected, ylab = "Value", xlab = "Number of Paths",
-         main = title)
-    graphics::abline(h = expected[length(expected)], lty=2)
+
+    graphics::plot(x = breaks, y = expected, ylab = "Value", xlab = "Number of Paths",
+                   main = title)
+
+    # Add horizontal line for the final overall mean
+    graphics::abline(h = expected[length(expected)], lty = 2)
+
     p <- grDevices::recordPlot()
 
     return(p)
@@ -260,21 +264,23 @@ plot_distribution <- function(prices) {
 
 }
 
-#' Plot Distribution of Cashflows
+#' Plot Scatter of Policy Valuations
 #'
-#' Plots a scatter plot for a provided set of cashflows
+#' Plots a scatter plot for a provided set of simulated valuations
 #'
 #' @name plot_scatter
 #' @param prices
-#' Matrix of simulated cashflow paths
+#' Vector or matrix of simulated policy values
 #' @return
-#' Distribution Plot
+#' Scatter Plot
 plot_scatter <- function(prices) {
 
-    # Format histogram plot
+    # Format scatter plot
     title <- paste("Scatterplot of Policy Valuation (", length(prices),
                    " paths)", sep = "")
-    graphics::plot(x = prices, ylab = "Frequency", xlab = "Value", main = title)
+
+    # Corrected axis labels: y-axis is Value, x-axis is the Path index
+    graphics::plot(x = prices, ylab = "Value", xlab = "Simulation Path", main = title)
 
     p <- grDevices::recordPlot()
 

@@ -17,8 +17,8 @@
 #' takes values 1 or 0, where 1 indicates policyholder is female
 #' @param year
 #' integer denoting current year
-#' @param freq
-#' integer denoting the number of transition steps per year (e.g., 12 for monthly, 1 for annual).
+#' @param frequency
+#' string selecting the simulation frequency: "year", "quarter", or "month". Default is "year".
 #'
 #' @return
 #' list of transition probability matrices
@@ -29,7 +29,7 @@
 #'
 #' @examples example
 #'
-health3_get_trans_probs <- function(model_type, param_file, init_age, closure_age, female, year, freq) {
+health3_get_trans_probs <- function(model_type, param_file, init_age, closure_age, female, year, frequency = "year") {
     b1 <- gamma_age1 <- gamma_gender1 <- gamma_time1 <- a1 <- NULL
     b2 <- gamma_age2 <- gamma_gender2 <- gamma_time2 <- a2 <- NULL
     b3 <- gamma_age3 <- gamma_gender3 <- gamma_time3 <- a3 <- NULL
@@ -52,8 +52,15 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, closure_ag
         stop('year must be an integer')
     }
 
-    if (freq <= 0 | freq != floor(freq)) {
-        stop('frequency must be a positive integer')
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
     }
 
     if (!is.character(param_file)) {
@@ -120,7 +127,7 @@ health3_get_trans_probs <- function(model_type, param_file, init_age, closure_ag
         }
     }
 
-    # Calculate sub-annual age steps
+    # Calculate sub-annual age steps using mapped frequency
     step <- 1 / freq
     ages <- seq(init_age, closure_age - step, by = step)
     n_steps <- length(ages)

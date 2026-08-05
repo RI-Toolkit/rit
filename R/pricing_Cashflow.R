@@ -18,7 +18,19 @@ cf_account_based_pension <- function(policy, state, data) {
 
     # Extract relevant policy variables
     balance <- policy$bal[1]
+    frequency <- policy$frequency[1]
     rate <- policy$rate
+
+    # Map string frequency to numeric periods per year
+    if (frequency == "year") {
+        freq_num <- 1
+    } else if (frequency == "quarter") {
+        freq_num <- 4
+    } else if (frequency == "month") {
+        freq_num <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     # Initialize output vector
     cf <- rep(0, times = length(state))
@@ -26,35 +38,32 @@ cf_account_based_pension <- function(policy, state, data) {
     i <- 1
     while (state[i] != -1 & i < length(state)) {    # while PH is not dead
 
+        # Determine which year of the policy we are in to get the correct annual rate
+        year_idx <- floor((i - 1) / freq_num) + 1
+
+        # Safety check: prevent out-of-bounds if state sequence outlasts rate array
+        if (year_idx > length(rate)) {
+            year_idx <- length(rate)
+        }
+
+        # Apply market returns for the fractional period
         balance <- balance * (1 + data$stock[i])
 
-        # Record cashflow to output vector
-        cf[i] <- balance * rate[i]
+        # Record cashflow to output vector (fraction of the annual rate)
+        cf[i] <- balance * (rate[year_idx] / freq_num)
 
-        # Update balance and yearly expense
+        # Update balance
         balance <- balance - cf[i]
 
         i <- i + 1
     }
 
-    # Withdraw balance after death (payout to family)
+    # Withdraw remaining balance after death (payout to family)
     cf[i] <- balance
 
     return(cf)
 }
 
-
-# Accounting for any remaining funds in account ??
-# if (i > length(state)) {
-#     cf[length(state)] <- cf[length(state)] + balance
-# }
-# else {
-#     cf[i] <- balance
-# }
-
-
-# Assumptions made: cash flows end when account balance is negative
-# ? withdrawl all for max age (e.g. goes to family)
 
 # ---------------------------------------------------------------------------- #
 # ------------------------------- Care Annuity ------------------------------- #
@@ -179,8 +188,6 @@ cf_life_annuity <- function(policy, state, data) {
     return(cf)
 }
 
-# For indexed benefits (e.g. inflation)
-# benefit <- benefit * (1 + index[i])
 
 # ---------------------------------------------------------------------------- #
 # ------------------------------ Pooled Annuity ------------------------------ #
@@ -235,38 +242,9 @@ cf_pooled_annuity <- function(policy, state, data) {
         i <- i + 1
     }
 
-    # Calculate value of unit annuity for entire pool
-    #ax <- rep(0, length(data$pool_e))
-    #for (i in seq(1, length(data$pool_e))) {
-        #ax[i] <- (data$pool_e[i]/data$pool_e[1]) * (1 + interest)^(-i)
-    #}
-
-    # Deduct initial costs from cashflow
-    # cf[1] <- cf[1] - policy$benefit * sum(ax)
-
     return(cf)
 }
 
-# For indexed benefits (e.g. inflation)
-# benefit <- benefit * (1 + index[i])
-
-# calculate_unit_annuity_due <- function(time, interest, mortality_expected) {
-
-#     # Initialize output variable
-#     value <- 0
-
-#     # Add discounted count of lives alive at time t
-#     discount <- 1
-#     for (i in seq(time, length(mortality_expected))) {
-#         value <- value + (discount * mortality_expected[i])
-#         discount <- discount / (1 + interest)
-#     }
-
-#     # Divide sum by size of initial population to get unit annuity-due
-#     value <- value/mortality_expected[1]
-
-#     return(value)
-# }
 
 # ---------------------------------------------------------------------------- #
 # ----------------------------- Reverse Mortgage ----------------------------- #
@@ -318,8 +296,6 @@ cf_reverse_mortgage <- function(policy, state, data) {
 
     return(cf)
 }
-
-# consider using { state[i] > -1 & state[i] < 3 } for 5 state model
 
 # ---------------------------------------------------------------------------- #
 # ----------------------------- Variable Annuity ----------------------------- #
@@ -373,17 +349,3 @@ cf_variable_annuity <- function(policy, state, data) {
 
     return(cf)
 }
-
-# NOTE: not used as static method withdraws every period -> no step-ups can
-# be applied
-#
-# withdrawl = FALSE
-#
-# Calculate max withdrawl for each time period
-# if (is.element((i - 1), step_time)) {
-#     # Step up max withdrawl for future time periods by relevant factor
-#     total_remaining <- total_remaining * step_size[match((i - 1), x)]
-# }
-
-# # Update max yearly withdrawl
-# max_withdraw <- total_remaining * withdraw_prop

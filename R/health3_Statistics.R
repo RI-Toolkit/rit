@@ -15,11 +15,22 @@
 #' @param year integer indicating current year (compulsory for frailty model)
 #' @param param_file parameter file (compulsory for frailty model)
 #' @param n integer denoting number of unique latent factor simulations
-#' @param freq integer denoting the number of transition steps per year
+#' @param frequency string selecting the simulation frequency: "year", "quarter", or "month".
 #'
 #' @return numeric output for average and standard deviation of future lifetime
 #' @export
-health3_afl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, freq) {
+health3_afl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     if (!model_type %in% c('S', 'T', 'F')) {
         stop('invalid model type, use S for static, T for trend, and F for frailty model')
@@ -65,7 +76,10 @@ health3_afl <- function(model_type, init_age, closure_age = 110, init_state, tra
         }
     }
 
-    return(list('mean' = mean(future_lifetimes), 's.dev' = stats::sd(future_lifetimes)))
+    # Calculate standard deviation of the sample mean
+    se_mean <- stats::sd(future_lifetimes) / sqrt(length(future_lifetimes))
+
+    return(list('mean' = mean(future_lifetimes), 's.dev' = se_mean))
 }
 
 #' Healthy Future lifetime
@@ -74,7 +88,18 @@ health3_afl <- function(model_type, init_age, closure_age = 110, init_state, tra
 #' in the healthy state.
 #'
 #' @export
-health3_hfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, freq) {
+health3_hfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     if (!model_type %in% c('S', 'T', 'F')) {
         stop('invalid model type, use S for static, T for trend, and F for frailty model')
@@ -109,7 +134,11 @@ health3_hfl <- function(model_type, init_age, closure_age = 110, init_state, tra
             healthy_lifetimes[idx_range] <- hl
         }
     }
-    return(list('mean' = mean(healthy_lifetimes), 's.dev' = stats::sd(healthy_lifetimes)))
+
+    # Calculate standard deviation of the sample mean
+    se_mean <- stats::sd(healthy_lifetimes) / sqrt(length(healthy_lifetimes))
+
+    return(list('mean' = mean(healthy_lifetimes), 's.dev' = se_mean))
 }
 
 #' Disabled Future Lifetime
@@ -118,7 +147,18 @@ health3_hfl <- function(model_type, init_age, closure_age = 110, init_state, tra
 #' deviation by simulating life time paths.
 #'
 #' @export
-health3_dfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, freq) {
+health3_dfl <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     if (!model_type %in% c('S', 'T', 'F')) {
         stop('invalid model type')
@@ -152,7 +192,11 @@ health3_dfl <- function(model_type, init_age, closure_age = 110, init_state, tra
             disabled_lifetimes[idx_range] <- dl
         }
     }
-    return(list('mean' = mean(disabled_lifetimes), 's.dev' = stats::sd(disabled_lifetimes)))
+
+    # Calculate standard deviation of the sample mean
+    se_mean <- stats::sd(disabled_lifetimes) / sqrt(length(disabled_lifetimes))
+
+    return(list('mean' = mean(disabled_lifetimes), 's.dev' = se_mean))
 }
 
 #' Time until onset of disability (conditional on being disabled)
@@ -161,7 +205,18 @@ health3_dfl <- function(model_type, init_age, closure_age = 110, init_state, tra
 #' during their life time.
 #'
 #' @export
-health3_time_to_disabled <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, freq) {
+health3_time_to_disabled <- function(model_type, init_age, closure_age = 110, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     if (init_state != 0) stop('initial state needs to be 0')
 
@@ -200,7 +255,15 @@ health3_time_to_disabled <- function(model_type, init_age, closure_age = 110, in
             }
         }
     }
-    return(list('mean' = mean(first_time), 's.dev' = stats::sd(first_time)))
+
+    # Calculate standard deviation of the sample mean (handle potential division by zero if empty)
+    if (length(first_time) > 0) {
+        se_mean <- stats::sd(first_time) / sqrt(length(first_time))
+    } else {
+        se_mean <- NA
+    }
+
+    return(list('mean' = mean(first_time), 's.dev' = se_mean))
 }
 
 #' Survival Statistics
@@ -209,7 +272,18 @@ health3_time_to_disabled <- function(model_type, init_age, closure_age = 110, in
 #' disabled lifetime, onset of disability (if initial state is healthy).
 #'
 #' @noRd
-health3_survival_stats <- function(model_type, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, freq) {
+health3_survival_stats <- function(model_type, init_age, closure_age, init_state, trans_probs = NULL, simulated_path = NULL, female = NULL, year = NULL, param_file = NULL, n = 1000, frequency) {
+
+    # Map the string frequency to numeric steps per year
+    if (frequency == "year") {
+        freq <- 1
+    } else if (frequency == "quarter") {
+        freq <- 4
+    } else if (frequency == "month") {
+        freq <- 12
+    } else {
+        stop("Frequency must be one of 'year', 'quarter', and 'month'.")
+    }
 
     if (model_type %in% c('S', 'T')) {
 
@@ -287,10 +361,19 @@ health3_survival_stats <- function(model_type, init_age, closure_age, init_state
         }
     }
 
-    # Format final return dataframe
+    # Format final return dataframe using standard error of the mean
+    n_total <- length(total_lifetime)
+
     if (init_state == 0) {
+        n_fd <- sum(!is.na(first_disabled)) # Count non-NA occurrences only
+
         means <- c(mean(total_lifetime), mean(healthy_lifetime), mean(disabled_lifetime), mean(first_disabled, na.rm = TRUE))
-        sds <- c(stats::sd(total_lifetime), stats::sd(healthy_lifetime), stats::sd(disabled_lifetime), stats::sd(first_disabled, na.rm = TRUE))
+        sds <- c(
+            stats::sd(total_lifetime) / sqrt(n_total),
+            stats::sd(healthy_lifetime) / sqrt(n_total),
+            stats::sd(disabled_lifetime) / sqrt(n_total),
+            stats::sd(first_disabled, na.rm = TRUE) / sqrt(n_fd)
+        )
         stats_df <- data.frame(
             'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state F', 'First time entering state F'),
             'mean' = means,
@@ -298,7 +381,11 @@ health3_survival_stats <- function(model_type, init_age, closure_age, init_state
         )
     } else {
         means <- c(mean(total_lifetime), mean(healthy_lifetime), mean(disabled_lifetime))
-        sds <- c(stats::sd(total_lifetime), stats::sd(healthy_lifetime), stats::sd(disabled_lifetime))
+        sds <- c(
+            stats::sd(total_lifetime) / sqrt(n_total),
+            stats::sd(healthy_lifetime) / sqrt(n_total),
+            stats::sd(disabled_lifetime) / sqrt(n_total)
+        )
         stats_df <- data.frame(
             'stats' = c('Mean years of life', 'Mean years in state H', 'Mean years in state F'),
             'mean' = means,
