@@ -10,6 +10,11 @@ la <- create_policy_LA(benefit = 1, defer = 0, increase = 0, frequency = "year")
 cf_la <- simulate_cf(la, n = 10000, seed = 2026)
 val_la <- value_policy(la, cf_la)
 
+la_m <- create_policy_LA(benefit = 1/4, defer = 0, increase = 0, frequency = "quarter")
+cf_la_m <- simulate_cf(la_m, n = 10000, seed = 2026)
+val_la_m <- value_policy(la_m, cf_la_m)
+
+
 
 #######################
 # Example 2
@@ -70,8 +75,9 @@ N <- 10000
 death_ages <- get_ages_at_death(surv, max_years = 100, n_paths = N)
 
 # Construct state and SDF matrix
+i_avg <- mean(1/cf_la$sdf - 1)
 state <- construct_state_matrix(death_ages, max_years = 100)
-sdf_ex2 <- list(sdf = t(matrix(rep((1+0.03)^-1, N*100), ncol  = N)))
+sdf_ex2 <- list(sdf = t(matrix(rep((1+i_avg)^-1, N*100), ncol  = N)))
 
 # Policy valuation
 la <- create_policy_LA(benefit = 1, defer = 0, increase = 0, frequency = "year")
@@ -79,7 +85,7 @@ cf_la <- simulate_cf(la, state = state, econ_var = sdf_ex2, n = N)
 val_la <- value_policy(la, cf_la)
 
 # Exact valuation
-exact_val <- axn(actuarialtable = soa08Act, x = 65, payment = "arrears", i = 0.03)
+exact_val <- axn(actuarialtable = soa08Act, x = 65, payment = "arrears", i = i_avg)
 
 # Check the difference
 simulated_mean <- val_la$stats$mean
@@ -91,24 +97,15 @@ cat("Difference:                       ", abs(exact_val - simulated_mean), "\n")
 
 #######################
 # Example 3
-sdf_ex3 <- list(sdf = t(matrix(rep((1+0.03)^-1, 1000*100), ncol  = 1000)))
-la <- create_policy_LA(benefit = 100, defer = 0, increase = 0.01)
-cf_la <- simulate_cf(la, econ_var = sdf_ex3)
-val_la <- value_policy(la, cf_la)
+calculatefee_VA <- function(prop, length, value, seed, frequency) {
 
-
-
-#######################
-# Example 4
-calculatefee_VA <- function(prop, length, value, seed) {
-
-    state <- sim_indiv_path(init_age = 65, female = 1, seed = seed, n = N)
-    econ_var <- esg_var_simulator(num_years = NCOL(state), num_paths = N, frequency = "year", seed = seed)
+    state <- sim_indiv_path(init_age = 65, female = 1, n = N, frequency = frequency, seed = seed)
+    econ_var <- esg_var_simulator(num_years = NCOL(state), num_paths = N, frequency = frequency, seed = seed)
     econ_var$sdf <- econ_var$discount_factors
 
     # Define the objective function
     f <- function(fee) {
-        GMWB <- create_policy_VA(value = value, length = length, prop = prop, g_fee = fee)
+        GMWB <- create_policy_VA(value = value, length = length, prop = prop, g_fee = fee, frequency = frequency)
         policy_cf <- simulate_cf(GMWB, n = N, state = state, econ_var = econ_var)
 
         # Turn off displaying figures in the function value_policy()
@@ -150,49 +147,51 @@ calculatefee_VA <- function(prop, length, value, seed) {
 
 # Product details
 prop <- 0.02
-length <- 15
 value <- 100
 seed <- 2026
-N <- 1e3
+N <- 1e4
+frequency <- "year"
 
-fair_fee <- calculatefee_VA(prop = prop, length = length, value = value, seed = seed)
-
-
-
+fair_fee_15 <- calculatefee_VA(prop = prop, length = 15, value = value, seed = seed, frequency = frequency)
+fair_fee_20 <- calculatefee_VA(prop = prop, length = 20, value = value, seed = seed, frequency = frequency)
 
 
 #######################
-# Example 5
-# 1. Create the Care Annuity Policy Object
-# Benefits: 100 (Healthy), 150 (Disabled)
-# Increase: 2% p.a., Guarantee: 5 years
-ca_policy <- create_policy_CA(benefit = c(1000, 3000), increase = 0, min = 0, defer = 3)
+# Example 4 (Sherris and Wei (2021))
+# 1. Create the Life Care Annuity policy object
+# Monthly Benefits: 1000 (Healthy), 3000 (Disabled); 3-month waiting period
+ca_policy <- create_policy_CA(benefit = c(1000, 0, 3000, 3000), increase = 0, min = 0, defer = 3, frequency = "month")
 
 # 2. Simulate Cashflows
-# Note: When 'state' is not provided, simulate_cf() automatically uses the default Health State module parameters (the US HRS 3-state model)
-cf_ca <- simulate_cf(ca_policy, init_age = 65, freq = 12, n = 1000)
+N <- 1e4
+# Interest rate is 3% p.a.
+sdf_ex8 <- list(sdf = t(matrix(rep((1+0.03)^-(1/12), N*12*100), ncol  = N)))
+# Use the US 5-state model
+trans_probs <- get_trans_probs(n_states = 5, model_type = "S", param_file = US_HRS_5, init_age = 65, female = 1, year = 2022, latent = 0, frequency = "month")
+simulated_path <- simulate_health_state_paths(trans_probs, init_age = 65, init_state = 0, cohort = N)
+cf_ca <- simulate_cf(ca_policy, init_age = 65, econ_var = sdf_ex8, n = N, state = simulated_path, seed = 2026)
 
 # 3. Value the Policy
 val_ca <- value_policy(ca_policy, cf_ca)
 
 
 #######################
-# Example 6
+# Example 5
 # 1. Create the Reverse Mortgage Policy Object
-# Initial house value: $600,000; LVR = 100%; Transaction cost = 2.5%
+# Initial house value: $600,000; LVR = 100%; Transaction cost = 1%
 
-calculatefee_RM <- function(value, LVR, trans_cost, seed) {
+calculatefee_RM <- function(value, LVR, trans_cost, seed, frequency) {
 
     state <- sim_indiv_path(init_age = 65, female = 1, seed = seed, n = N)
-    econ_var <- esg_var_simulator(num_years = NCOL(state), num_paths = N, frequency = "year", seed = seed)
+    econ_var <- esg_var_simulator(num_years = NCOL(state), num_paths = N, frequency = frequency, seed = seed)
     econ_var$sdf <- econ_var$discount_factors
     econ_var$zcp3m <- econ_var$zcp3m_yield
     econ_var$house <- econ_var$home_index
 
     # Define the objective function
     f <- function(fee) {
-        RM <- create_policy_RM(value = value, LVR = LVR, trans_cost = gamma, margin = fee)
-        policy_cf <- simulate_cf(RM, n = N, state = state, econ_var = econ_var)
+        RM <- create_policy_RM(value = value, LVR = LVR, trans_cost = gamma, margin = fee, frequency = frequency)
+        policy_cf <- simulate_cf(RM, n = N, state = state, econ_var = econ_var, seed = seed)
         L0 <- value * LVR
         Lt <- L0 * t(apply(1 + fee + econ_var$zcp3m, 1, cumprod))
         premium <- mean(rowSums((state + 1) * policy_cf$sdf * Lt * fee))
@@ -238,18 +237,18 @@ calculatefee_RM <- function(value, LVR, trans_cost, seed) {
 value <- 600000
 LVR <- 0.64
 gamma <- 0.01
-seed <- 123
-N <- 1e3
+N <- 1e4
+frequency <- "year"
 
-fair_margin <- calculatefee_RM(value = value, LVR = LVR, trans_cost = gamma, seed = seed)
+fair_margin <- calculatefee_RM(value = value, LVR = LVR, trans_cost = gamma, seed = 123, frequency = frequency)
 
-rm <- create_policy_RM(value = value, LVR = LVR, trans_cost = gamma, margin = fair_margin)
-cf_rm <- simulate_cf(rm)
+rm <- create_policy_RM(value = value, LVR = LVR, trans_cost = gamma, margin = fair_margin, frequency = frequency)
+cf_rm <- simulate_cf(rm, seed = 123, n = N)
 val_rm <- value_policy(rm, cf_rm)
 
 
 #######################
-# Example 7
+# Example 6
 # Transform real-world mortality to risk-neutral measures
 # 1. Load data and extract cohort mortality for a 65-year-old male: Use the AUS male rates from the package data
 rates_P <- mortality_AUS_data$rate$male
@@ -279,30 +278,6 @@ legend("topright", legend = c("Risk-Neutral (Q)", "Real-World (P)"), col = c("re
 
 
 
-#######################
-# Example 8 (Sherris and Wei (2021))
-# 1. Create the Care Annuity Policy Object
-# Benefits: 1000 (Healthy), 3000 (Disabled)
-ca_policy <- create_policy_CA(benefit = c(1000, 0, 3000, 3000), increase = 0, min = 0, defer = 3, frequency = 'month')
-sdf_ex8 <- list(sdf = t(matrix(rep((1+0.03)^-(1/12), 10000*12*100), ncol  = 10000)))
-trans_probs <- get_trans_probs(n_states=5, model_type='S', param_file=US_HRS_5, init_age=65, female=1, year = 2022, latent = 0, frequency = 'month')
-simulated_path <- simulate_health_state_paths(trans_probs, init_age=65, init_state = 0, cohort = 100)
-
-# 2. Simulate Cashflows
-# Note: When 'state' is not provided, simulate_cf() automatically uses the default Health State module parameters (the US HRS 3-state model)
-cf_ca <- simulate_cf(ca_policy, init_age = 65, econ_var = sdf_ex8, n = 100, state = simulated_path)
-
-# 3. Value the Policy
-val_ca <- value_policy(ca_policy, cf_ca)
-
-
-#############
-trans_probs_5 <- get_trans_probs(n_states = 5, model_type = 'T', param_file = US_HRS_5, init_age = 87, female = 0, year = 2022, latent = 0, frequency = 'year')
-lifetable_5 <- create_life_table(trans_probs_5, init_age = 87, init_state = 0, cohort = 100000)
-head(lifetable_5,3)
-simulated_path_5 <- simulate_health_state_paths(trans_probs_5, init_age = 87, init_state = 0, cohort = 10000)
-prob_plots(init_age = 87, init_state = 0, trans_probs = trans_probs_5, frequency = 'year')
-health_stats(n_states = 5, model_type = 'T', init_age = 87, init_state = 0, trans_probs = trans_probs_5, frequency = 'year')
 
 
 

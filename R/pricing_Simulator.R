@@ -319,6 +319,7 @@ get_house_return <- function(var_sim) {
 }
 
 get_stock_return <- function(var_sim) {
-    asx <- (unname(var_sim$ASX))
+    # Changed from var_sim$ASX to var_sim$stock to match the econ_var list
+    asx <- (unname(var_sim$stock))
     return(get_perc_change(asx))
 }

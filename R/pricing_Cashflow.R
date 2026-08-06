@@ -157,33 +157,39 @@ cf_care_annuity <- function(policy, state, data = NULL) {
 #' @param policy
 #' Policy object containing necessary parameters (see create_policy_LA)
 #' @param state
-#' State vector containing state values for entire duration
+#' State vector containing state values for entire duration (-1 = dead)
 #' @param data
 #' Data frame containing all variables generated using other modules
 #'
 #' @return
-#' Vector of cashflows for at each time point
+#' Vector of cashflows at each time point
 cf_life_annuity <- function(policy, state, data) {
 
     # Extract relevant policy variables
-    increase <- policy$increase
-    benefit <- policy$benefit
-    d <- policy$defer
+    # (Per documentation, these are already in frequency units)
+    increase <- policy$increase[1]
+    benefit  <- policy$benefit[1]
+    d        <- policy$defer[1]
 
     # Initialize output vector
-    cf <- rep(0, times = length(state))
+    cf <- numeric(length(state))
 
-    i <- 1
-    while (state[i] != -1 & i < length(state)) {     # while PH is not dead
+    # Identify all periods where the policyholder is alive
+    alive <- state != -1
 
-        # For flat-rate increase
-        benefit <- benefit * (1 + increase)
-
-        # Get benefit if alive after deferment period
-        cf[i] <- ifelse (i <= d, 0, benefit)
-
-        i <- i + 1
+    if (!any(alive)) {
+        return(cf)
     }
+
+    # Create a vector of step indices (1, 2, 3... length(state))
+    i <- seq_along(state)
+
+    # Calculate the compounded benefit for all alive periods.
+    # This exactly mirrors your original logic: benefit * (1+increase) per step
+    cf[alive] <- benefit * (1 + increase)^i[alive]
+
+    # Enforce the deferment period by zeroing out early cashflows
+    cf[i <= d] <- 0
 
     return(cf)
 }
