@@ -319,7 +319,20 @@ get_house_return <- function(var_sim) {
 }
 
 get_stock_return <- function(var_sim) {
-    # Changed from var_sim$ASX to var_sim$stock to match the econ_var list
-    asx <- (unname(var_sim$stock))
+
+    # Check the names available in the provided var_sim list
+    # and extract the correct one dynamically
+    if ("stock" %in% names(var_sim)) {
+        asx <- unname(var_sim$stock)
+    } else if ("ASX" %in% names(var_sim)) {
+        asx <- unname(var_sim$ASX)
+    } else if ("ASX200" %in% names(var_sim)) {
+        asx <- unname(var_sim$ASX200)
+    } else if ("market_index" %in% names(var_sim)) {
+        asx <- unname(var_sim$market_index)
+    } else {
+        stop("Error: Could not locate stock data. Ensure econ_var contains 'stock' or 'ASX'.")
+    }
+
     return(get_perc_change(asx))
 }
